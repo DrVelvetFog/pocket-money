@@ -1,0 +1,45 @@
+pm-agent keystore password: 
+pm-owner keystore password: 
+
+================ loop 1: spend -> top-up, on each chain ================
+agent pays 250000 on Base Sepolia to 0x9a822A254431C6798e1B13Cd809617399b8cda9c
+origin    0x881badeed45cdcdc54d85a5cbfce07ebe364444f3af222ce9d5083b2d3d183ee  block 56937560  (Base Sepolia)
+reactive  0x6374a91e7c8d8baa85d3a79781c26cbf923961390f6f81036eb60f63e511d3c7  (Lasna)
+callback  0xffbb5a6c48a8fa020df48f67c868cfa554a36b6227dfc5e0262824101a454557  block 56937571  (Base Sepolia)
+agent balance on Base Sepolia: 1000000 [1e6]
+
+agent pays 250000 on Unichain Sepolia to 0x9a822A254431C6798e1B13Cd809617399b8cda9c
+origin    0x150aabc32db477fd759ff996730674c54a41d0b09cc3086df11f3e8ff907c184  block 67456959  (Unichain Sepolia)
+reactive  0x481b1f798f3b867473771d5b84610a491ba14eb476d017bf78453506aa0351d5  (Lasna)
+callback  0x221530657833c6b410c0d5b11768cb049920ff58b4adea08314616a93770d893  block 67456961  (Unichain Sepolia)
+agent balance on Unichain Sepolia: 1000000 [1e6]
+
+agent pays 250000 on Ethereum Sepolia to 0x9a822A254431C6798e1B13Cd809617399b8cda9c
+origin    0x266f25f713e5acb8cf5404e4357cbe5a2e46b5bfe111f8837a22f56706327a09  block 12104275  (Ethereum Sepolia)
+reactive  0xc8f87552a45c130a70d8abdc0af4c19ca5f4f679f0035ca42eed305453da0ee8  (Lasna)
+callback  none  block -  (Ethereum Sepolia)
+agent balance on Ethereum Sepolia: 750000 [7.5e5]
+
+
+================ loop 2: unknown payee -> agent frozen on every chain ================
+agent pays 250000 on Unichain Sepolia to 0x000000000000000000000000000000000000dEaD
+origin    0xc820a41672f00c5681cd9a2af3c3ada19f2e890b7f1696189e7093e41d441f7b  block 67457134  (Unichain Sepolia)
+reactive  0x6318f396d3dba9439161d13fab5f223731a83be9a2d47cf862c469efed06fdad  (Lasna)
+frozen    0x3606a03631079f4cda708937eee943a3373d47e14fd01d2c1b8c007818d524ba  (Base Sepolia)
+frozen    0x535075e86e02af4cc678a931cf0b6ba8060202d88c6bc2c41fb58cb19aaa01b4  (Unichain Sepolia)
+frozen    0x2d72c8ec63e5694622227c45a0ec38e12a65309c5599253087dddd45a0838ae2  (Ethereum Sepolia)
+agent balance on Unichain Sepolia: 750000 [7.5e5]
+
+================ reset: lift the agent's quarantine ================
+done
+
+================ loop 3: panic on one chain -> every vault frozen ================
+owner presses panic on Ethereum Sepolia
+panic     0x7815ee3c5f302125284e0085fc87e5e286d0484e5572d0a65d0cb79571f9b836  (Ethereum Sepolia)
+reactive  0xb72cea99a1c2ada61a26fbd2c028bfcbca2206be2b4dbab0a7c477f3bb6f60fd  (Lasna)
+frozen    0x32f5a21a48ab4abe48bccd2471d51bf43ba9cc9735cc7983b1d26b8da917f6e8  (Base Sepolia)
+frozen    0x41214a5fb20f2d95c2a5671bfef41eb7a1bd8e74e43f9836d57c570c1422ce7c  (Unichain Sepolia)
+frozen    0x9ee57ae68034eac26b491999687856b262e761c6717f95737a0409d9d2f23f07  (Ethereum Sepolia)
+
+================ reset: lift the panic ================
+done
