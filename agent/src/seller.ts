@@ -10,7 +10,7 @@ import { x402Facilitator } from "@x402/core/facilitator";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { ExactEvmScheme as ExactFacilitatorScheme } from "@x402/evm/exact/facilitator";
 import { ExactEvmScheme as ExactServerScheme } from "@x402/evm/exact/server";
-import { createWalletClient, http, publicActions } from "viem";
+import { createPublicClient, createWalletClient, hexToString, http, parseAbi, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { NETS, USDC_DOMAIN, pk } from "./chains.ts";
 
@@ -21,8 +21,10 @@ const BAND_HIGH = Number(process.env.BREAKEVEN_HIGH ?? 102000);
 
 const account = privateKeyToAccount(pk("SELLER_PK"));
 const facilitator = new x402Facilitator();
+const readers = new Map<number, ReturnType<typeof createPublicClient>>();
 
 for (const n of NETS) {
+  readers.set(n.id, createPublicClient({ chain: n.chain, transport: http(n.rpc) }));
   const c = createWalletClient({ account, chain: n.chain, transport: http(n.rpc) }).extend(publicActions);
   const signer = toFacilitatorEvmSigner({
     address: account.address,
@@ -36,7 +38,41 @@ for (const n of NETS) {
   facilitator.register(`eip155:${n.id}`, new ExactFacilitatorScheme(signer));
 }
 
-const server = new x402ResourceServer(facilitator as never).register("eip155:*", new ExactServerScheme());
+// ---- Pocket Money pre-check: ask this chain's vault before verifying or settling ----
+const CAN_SPEND = parseAbi(["function canSpend(address,uint256) view returns (bool,uint256,bytes32)"]);
+type Req = { network: string; amount: string };
+type Payload = { payload?: { authorization?: { from?: string } } };
+
+/** Returns a refusal reason, or undefined to let the payment through. */
+async function pocketMoneyCheck(payload: Payload, req: Req): Promise<string | undefined> {
+  const chainId = Number(req.network.split(":")[1]);
+  const vault = process.env[`VAULT_${chainId}`] as `0x${string}` | undefined;
+  const payer = payload.payload?.authorization?.from as `0x${string}` | undefined;
+  if (!vault || !payer) return undefined;
+  const [ok, left, why] = await readers.get(chainId)!.readContract({
+    address: vault, abi: CAN_SPEND, functionName: "canSpend", args: [payer, BigInt(req.amount)],
+  });
+  const reason = hexToString(why, { size: 32 }).replace(/\0+$/, "");
+  if (ok || reason === "unknown agent") return undefined; // not a household agent: not ours to police
+  console.log(`refused ${payer} on ${chainId}: ${reason} (left ${left})`);
+  return `pocket_money_${reason.replace(/ /g, "_")}`;
+}
+
+const guarded = {
+  getSupported: () => facilitator.getSupported(),
+  async verify(payload: Payload, req: Req) {
+    const why = await pocketMoneyCheck(payload, req);
+    if (why) return { isValid: false, invalidReason: why, payer: payload.payload?.authorization?.from };
+    return facilitator.verify(payload as never, req as never);
+  },
+  async settle(payload: Payload, req: Req) {
+    const why = await pocketMoneyCheck(payload, req); // re-check: the budget may have moved since verify
+    if (why) return { success: false, errorReason: why, transaction: "", network: req.network, payer: payload.payload?.authorization?.from };
+    return facilitator.settle(payload as never, req as never);
+  },
+};
+
+const server = new x402ResourceServer(guarded as never).register("eip155:*", new ExactServerScheme());
 
 const app = express();
 app.use(
