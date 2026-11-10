@@ -276,3 +276,19 @@ The same SpendInbox and the same guard as Sui. The Solana attester (`agent/src/s
 It then rebuilds every receipt hash.
 - **Live result:** `VERIFIED: 5 receipts`. The rebuilt head `0x613d1e7c…18b9` equals the guard's.
 - **Self-test:** `TAMPER=1` (one unit forged on receipt #0) breaks every later head and reports `FAILED`.
+
+## Dry run of the unattended daily job (2026-11-10)
+
+`script/daily.sh` was run twice by hand before the live run. It unlocks the keys from the macOS Keychain, starts the x402 seller and the CCTP relayer, buys the morning report, waits for the top-up, verifies the receipt chain, writes the day's JSON, and stops everything.
+
+| Run | Chain | x402 settlement (sent by seller) | Top-up | Mirror | Verifier |
+|---|---|---|---|---|---|
+| 1, normal shell | Ethereum Sepolia | `0xbe43ce80…4798` | `0x6c3a983d…6480` | $2.89 → $2.79 | VERIFIED, 6 receipts |
+| 2, bare environment like launchd (`env -i`, PATH=/usr/bin:/bin) | Unichain Sepolia | `0x8798ff04…0874` | `0x9f25bc9a…65cf` | $2.79 → $2.69 | VERIFIED, 7 receipts |
+
+**Checks:**
+- No password prompts.
+- The agent was back to its $1.00 float each time.
+- The seller and relayer stopped after each run.
+
+Records: `deployments/daily/2026-11-10-run1.json`, `deployments/daily/2026-11-10-run2-bare-env.json`.

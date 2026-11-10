@@ -1,0 +1,21 @@
+{
+  "day": "2026-11-10",
+  "chain": 1301,
+  "report": {
+    "asOf": "2026-11-10T14:03:00.314Z",
+    "btcUsd": 73769.825,
+    "breakevenBand": [
+      95000,
+      102000
+    ],
+    "gapToLow": -21230,
+    "gapToHigh": -28230,
+    "verdict": "below band"
+  },
+  "settlement": "0x8798ff04549ebf197984de0496a3b72a59f10014a4068cfee961d1a4637e0874",
+  "topUp": "0x9f25bc9a91430a9dab4573088ba78b3b11a87a500e17ee5fbcc72b3a305665cf",
+  "mirrorBefore": "2790000",
+  "mirrorAfter": "2690000",
+  "refusal": "",
+  "verify": "VERIFIED: 7 receipts from block 8004107; rebuilt head 0x0e6c831dc26c6ce41ab3b104d62f547e058716e484fc299bae117f946733747a guard says 7 receipts, head 0x0e6c831dc26c6ce41ab3b104d62f547e058716e484fc299bae117f946733747a "
+}

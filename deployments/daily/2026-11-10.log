@@ -1,0 +1,44 @@
+== 2026-11-10: buying the morning report on 11155111 (mirror says 2890000 left)
+{
+  "day": "2026-11-10",
+  "chain": 11155111,
+  "report": {
+    "asOf": "2026-11-10T14:01:30.471Z",
+    "btcUsd": 73740.785,
+    "breakevenBand": [
+      95000,
+      102000
+    ],
+    "gapToLow": -21259,
+    "gapToHigh": -28259,
+    "verdict": "below band"
+  },
+  "settlement": "0xbe43ce8001ef9417183f5d1eb363be50cb0b101bfac9961b20fbc67a505e4798",
+  "topUp": "0x6c3a983d7ef212c9e0aae8d3fc8a0dedb898aed7606265c8279c03682ccb6480",
+  "mirrorBefore": "2890000",
+  "mirrorAfter": "2790000",
+  "refusal": "",
+  "verify": "VERIFIED: 6 receipts from block 8004107; rebuilt head 0x4bd2737461b69355a8965db7f5bb3dd1202103f379d0d66e71d1cee3c511c57f guard says 6 receipts, head 0x4bd2737461b69355a8965db7f5bb3dd1202103f379d0d66e71d1cee3c511c57f "
+}
+== 2026-11-10: buying the morning report on 1301 (mirror says 2790000 left)
+{
+  "day": "2026-11-10",
+  "chain": 1301,
+  "report": {
+    "asOf": "2026-11-10T14:03:00.314Z",
+    "btcUsd": 73769.825,
+    "breakevenBand": [
+      95000,
+      102000
+    ],
+    "gapToLow": -21230,
+    "gapToHigh": -28230,
+    "verdict": "below band"
+  },
+  "settlement": "0x8798ff04549ebf197984de0496a3b72a59f10014a4068cfee961d1a4637e0874",
+  "topUp": "0x9f25bc9a91430a9dab4573088ba78b3b11a87a500e17ee5fbcc72b3a305665cf",
+  "mirrorBefore": "2790000",
+  "mirrorAfter": "2690000",
+  "refusal": "",
+  "verify": "VERIFIED: 7 receipts from block 8004107; rebuilt head 0x0e6c831dc26c6ce41ab3b104d62f547e058716e484fc299bae117f946733747a guard says 7 receipts, head 0x0e6c831dc26c6ce41ab3b104d62f547e058716e484fc299bae117f946733747a "
+}
