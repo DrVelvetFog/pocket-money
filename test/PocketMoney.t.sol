@@ -184,10 +184,14 @@ contract PocketMoneyTest is ReactiveSim {
     }
 
     function test_rebalanceOnlyGoesToApprovedPeersWithinCap() public {
-        bytes memory p = abi.encodeWithSignature("rebalance(address,uint32,uint256,uint256)", address(0), uint32(99), 1e6, 0);
+        bytes memory p = abi.encodeWithSignature(
+            "rebalance(address,uint32,uint256,uint256,uint64)", address(0), uint32(99), 1e6, 0, uint64(1)
+        );
         proxy.deliver(address(pm), address(vault[BASE]), p);
         assertEq(tm.burnCount(), 0); // domain 99 isn't a peer
-        p = abi.encodeWithSignature("rebalance(address,uint32,uint256,uint256)", address(0), uint32(10), 60e6, 0);
+        p = abi.encodeWithSignature(
+            "rebalance(address,uint32,uint256,uint256,uint64)", address(0), uint32(10), 60e6, 0, uint64(2)
+        );
         proxy.deliver(address(pm), address(vault[BASE]), p);
         assertEq(tm.burnCount(), 0); // over the $50 cap
     }
@@ -303,6 +307,23 @@ contract PocketMoneyTest is ReactiveSim {
         proxy.deliver(address(pm), address(vault[BASE]), p);
         proxy.deliver(address(pm), address(vault[BASE]), p);
         assertEq(_bal(andy, BASE), FLOAT - 1e6);
+    }
+
+    // Reactive has been seen delivering one requested callback twice (another Omni entry,
+    // 2026-11-10). Every callback has to be safe to run again.
+    function test_duplicateDeliveryOfEveryCallbackIsHarmless() public {
+        dupe = true;
+        pm.setRebalancePolicy(97e6, 99e6, 1000);
+        usdc[ETH].mint(address(vault[ETH]), 10e6);
+        _pump();
+        _spend(andy, BASE, shop, 4e6); // top-up + mirror sync + rebalance, each delivered twice
+        assertEq(_bal(andy, BASE), FLOAT); // refilled once, not twice
+        assertEq(tm.burnCount(), 1); // one CCTP burn, not two
+        assertEq(_bal(address(vault[ETH]), ETH), 107e6);
+        (, uint256 left,) = vault[UNI].canSpend(andy, 1);
+        assertEq(left, ALLOWANCE - 4e6);
+        _spend(andy, UNI, thief, 1e6); // freeze, delivered twice
+        for (uint256 i; i < ids.length; ++i) assertTrue(vault[ids[i]].agentFrozen(andy));
     }
 
     function test_reactOnlyFromSystem() public {

@@ -81,6 +81,7 @@ contract Vault is AbstractCallback {
     mapping(address => uint256) public floatOf;
     mapping(address => bool) public agentFrozen;
     uint64 public lastSeq;
+    uint64 public lastRebalanceSeq;
     bool public frozen;
 
     mapping(address => Budget) public budgetOf;
@@ -195,14 +196,22 @@ contract Vault is AbstractCallback {
     }
 
     /// @notice Send liquidity to a sibling vault over CCTP, within the owner's limits.
-    function rebalance(address guard_, uint32 destDomain, uint256 amount, uint256 maxFee) external onlyGuard(guard_) {
+    /// A repeated delivery of the same request (same seq) is declined, so it can't burn twice.
+    function rebalance(address guard_, uint32 destDomain, uint256 amount, uint256 maxFee, uint64 seq)
+        external
+        onlyGuard(guard_)
+    {
         bytes32 dest = peerOf[destDomain];
         bytes32 why = 0;
-        if (address(tokenMessenger) == address(0)) why = "no cctp";
-        else if (dest == 0) why = "not a peer";
-        else if (frozen) why = "frozen";
-        else if (amount > rebalanceCap) why = "over cap";
-        else if (amount > usdc.balanceOf(address(this))) why = "short";
+        if (seq <= lastRebalanceSeq) why = "stale";
+        else lastRebalanceSeq = seq;
+        if (why == 0) {
+            if (address(tokenMessenger) == address(0)) why = "no cctp";
+            else if (dest == 0) why = "not a peer";
+            else if (frozen) why = "frozen";
+            else if (amount > rebalanceCap) why = "over cap";
+            else if (amount > usdc.balanceOf(address(this))) why = "short";
+        }
         if (why != 0) {
             emit RebalanceDeclined(destDomain, amount, why);
             return;

@@ -44,6 +44,7 @@ abstract contract ReactiveSim is Test {
     uint256 txn;
     uint256 delivered;
     uint256 maxReactGas;
+    bool dupe; // deliver every callback twice, as Reactive sometimes does
     ISystemContract.CallbackConfiguration_V_1_0[] cbs;
     address[] cbFrom;
 
@@ -158,6 +159,7 @@ abstract contract ReactiveSim is Test {
             }
             for (; delivered < cbs.length; ++delivered) {
                 proxy.deliver(cbFrom[delivered], cbs[delivered].recipient, cbs[delivered].payload);
+                if (dupe) proxy.deliver(cbFrom[delivered], cbs[delivered].recipient, cbs[delivered].payload);
                 any = true;
             }
             if (!any) return;

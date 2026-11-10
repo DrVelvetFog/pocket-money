@@ -58,6 +58,14 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
    - **Fix:** base limits and today's raises are synced separately, so vaults drop the raises at the day boundary on their own.
    - **Regression test:** `test_regression_raiseExpiresAtMidnightInTheMirror`.
 
+**Bug found by a duplicate-delivery test (fixed):**
+
+3. **A rebalance delivered twice burned twice.**
+   - **Why we tested for it:** another Omni entry saw Reactive deliver one requested callback twice, 7 s apart. Top-ups (sequence number), mirror syncs (version) and freezes were already safe to run again; rebalance was not.
+   - **What broke:** a second delivery sent a second CCTP transfer. The money stayed in the system (approved sibling vault, under the cap), but it paid the fee twice and could pull the donor below its low-water mark.
+   - **Fix:** the guard numbers each rebalance per donor chain, and the vault declines any number it has already seen (`stale`).
+   - **Regression test:** `test_duplicateDeliveryOfEveryCallbackIsHarmless`. The simulator can deliver every callback twice (`dupe = true`); the test runs a top-up, a sync, a rebalance and a freeze that way.
+
 **Campaign sizes:**
 - default: 64 runs × 40 steps
 - deep: `FOUNDRY_INVARIANT_RUNS=512 FOUNDRY_INVARIANT_DEPTH=60`, 30,720 calls per invariant

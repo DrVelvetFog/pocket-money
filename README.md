@@ -88,7 +88,7 @@ Every row is on-chain. The tx hashes are in [`deployments/EVIDENCE.md`](deployme
 See [`SECURITY.md`](SECURITY.md) for the threat model, the trust assumptions, and the full static-analysis triage.
 
 **Unit tests:**
-- 42 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks.
+- 43 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks (or delivers each one twice, to prove every callback is safe to repeat).
 - The heaviest `react()` uses 193k gas (cap: 900k).
 
 **Invariant fuzzing (8 properties):**

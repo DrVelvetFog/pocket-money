@@ -103,6 +103,7 @@ contract PocketMoney is AbstractReactive {
     mapping(uint256 => Chain) public chains;
     uint256[] public chainIds;
     mapping(uint256 => uint64) public seqOf;
+    mapping(uint256 => uint64) public rebalanceSeqOf;
     mapping(uint256 => uint64) public callbackGasOf;
     mapping(uint256 => address) public inboxOf;
     /// @dev One-day raises the owner approves from any chain; cleared at the daily rollover.
@@ -313,7 +314,12 @@ contract PocketMoney is AbstractReactive {
             donor,
             chains[donor].vault,
             abi.encodeWithSignature(
-                "rebalance(address,uint32,uint256,uint256)", address(0), chains[low].domain, need, maxRebalanceFee
+                "rebalance(address,uint32,uint256,uint256,uint64)",
+                address(0),
+                chains[low].domain,
+                need,
+                maxRebalanceFee,
+                ++rebalanceSeqOf[donor]
             )
         );
     }
