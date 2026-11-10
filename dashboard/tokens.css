@@ -15,6 +15,31 @@
   --color-accent: oklch(50% 0.17 28);
   --color-accent-wash: oklch(50% 0.17 28 / 0.1);
   --color-focus: oklch(50% 0.17 28);
+  --color-desk: oklch(80% 0.032 72);
+  --color-desk-2: oklch(72% 0.036 66);
+  --color-highlight: oklch(99% 0.01 90 / 0.7);
+
+  /* light comes from the top left; shadows are warm, never grey */
+  --shadow-sheet:
+    0 1px 0 oklch(100% 0 0 / 0.5) inset,
+    0 1px 2px oklch(30% 0.04 60 / 0.18),
+    0 6px 14px -4px oklch(30% 0.04 60 / 0.18),
+    0 28px 48px -18px oklch(28% 0.05 55 / 0.35);
+  --shadow-card:
+    0 1px 0 oklch(100% 0 0 / 0.6) inset,
+    0 1px 1px oklch(30% 0.04 60 / 0.14),
+    0 4px 10px -3px oklch(30% 0.04 60 / 0.18);
+  --shadow-card-lift:
+    0 1px 0 oklch(100% 0 0 / 0.6) inset,
+    0 2px 3px oklch(30% 0.04 60 / 0.12),
+    0 14px 24px -8px oklch(30% 0.04 60 / 0.28);
+  --shadow-groove: inset 0 1px 2px oklch(30% 0.04 60 / 0.28), 0 1px 0 var(--color-highlight);
+  --press: 0 1px 0 var(--color-highlight); /* letterpress: ink sits in a dent */
+
+  /* paper grain + long fibres, tiled; generated, no image files */
+  --texture-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .29 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --texture-fibre: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.025 .1' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .37 0 0 0 0 .25 0 0 0 .18 -.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --texture-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='i'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23i)'/%3E%3C/svg%3E");
 
   --font-display: "Newsreader", ui-serif, "Iowan Old Style", serif;
   --font-body: "Newsreader", ui-serif, "Iowan Old Style", serif;
@@ -41,6 +66,7 @@
   --rule-hair: 1px;
   --rule-double: 3px;
   --radius-sm: 2px;
+  --radius-sheet: 3px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);

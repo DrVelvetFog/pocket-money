@@ -55,7 +55,7 @@ function odometer(text) {
         for (let d = 0; d <= 9; d++) { const s = document.createElement("span"); s.textContent = d; reel.append(s); }
         cell.append(reel);
       }
-      cell.firstChild.style.transform = `translateY(-${Number(ch)}em)`;
+      cell.firstChild.style.transform = `translateY(calc(-${Number(ch)} * var(--odo-step)))`;
     } else { cell.textContent = ch; }
   });
   $("hero-figure-text").textContent = text + " left to spend today";
@@ -180,7 +180,7 @@ function renderLedger(lines) {
 function renderStatements(logs) {
   const st = logs.filter((l) => l.topics[0] === TOPIC.statement);
   $("statements-empty").hidden = st.length > 0;
-  $("statements").innerHTML = st.map((l) => `<li class="statement"><b>Day ${Number(BigInt(l.topics[1])) + 1}</b><span>spent ${usd(word(l.data, 0))}</span><span>topped up ${usd(word(l.data, 1))}</span><span class="mono">${Number(word(l.data, 2))} receipts</span></li>`).join("");
+  $("statements").innerHTML = st.map((l) => `<li class="statement"><i class="slip" aria-hidden="true"></i><b>Day ${Number(BigInt(l.topics[1])) + 1}</b><span>spent ${usd(word(l.data, 0))}</span><span>topped up ${usd(word(l.data, 1))}</span><span class="mono">${Number(word(l.data, 2))} receipts</span></li>`).join("");
 }
 function renderChains(states) {
   $("chain-grid").innerHTML = C.chains.map((c, i) => {

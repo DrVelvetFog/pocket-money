@@ -1,17 +1,27 @@
 /* Hallmark · macrostructure: Stat-Led · tone: passbook (archival, plain-spoken) · anchor hue: 28 red ink
  * route: custom (tuned) · nav: N6 masthead · footer: Ft5 statement (proof)
+ * material pass: the page is a passbook lying open on a desk. Grain + fibre texture, a stack of
+ * pages underneath, letterpress figures, index-card vaults, recessed gauges, inked rubber stamps,
+ * torn receipt slips. One light source, top left; every shadow is warm.
  * pre-emit critique: P5 H4 E4 S5 R5 V5
  */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { overflow-x: clip; }
 body {
   margin: 0;
-  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: 1.55;
   font-variant-numeric: lining-nums tabular-nums;
+  /* the desk */
+  background-color: var(--color-desk);
+  background-image:
+    var(--texture-grain),
+    radial-gradient(120% 90% at 30% 0%, oklch(86% 0.03 78) 0%, transparent 60%),
+    radial-gradient(140% 120% at 50% 100%, var(--color-desk-2) 0%, transparent 70%);
+  background-attachment: fixed;
+  padding: clamp(var(--space-sm), 3vw, var(--space-2xl)) clamp(var(--space-2xs), 3vw, var(--space-xl));
 }
 .mono { font-family: var(--font-outlier); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -19,95 +29,244 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; 
 a:hover { color: var(--color-accent); }
 a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
 
-/* ---- masthead ---- */
+/* ---- the book: one sheet of paper with more pages under it ---- */
+.book {
+  position: relative;
+  max-width: 76rem;
+  margin: 0 auto;
+  /* no stacking context here, so the pages below (z-index -1) sit under this sheet's own paper */
+  border-radius: var(--radius-sheet);
+  background-color: var(--color-paper);
+  background-image:
+    var(--texture-fibre),
+    var(--texture-grain),
+    /* light falls from the top left; the far edges sit a touch lower in the light */
+    radial-gradient(110% 70% at 18% 0%, oklch(99% 0.012 88 / 0.9) 0%, transparent 60%);
+  /* the edges of a sheet catch less light */
+  box-shadow: var(--shadow-sheet), inset 0 0 90px -30px oklch(62% 0.05 70 / 0.35);
+}
+.book::before, .book::after {
+  /* the pages underneath, showing a sliver at the bottom right */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-sheet);
+  background: var(--color-paper-2) var(--texture-grain);
+  box-shadow: 0 1px 2px oklch(30% 0.04 60 / 0.2), 0 10px 20px -10px oklch(28% 0.05 55 / 0.3);
+}
+.book::before { transform: translate(5px, 5px) rotate(0.35deg); }
+.book::after  { transform: translate(10px, 9px) rotate(-0.25deg); background-color: var(--color-paper-3); z-index: -2; }
+
+/* ---- masthead: the book's cover band, stitched to the page ---- */
 .masthead {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: baseline;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: var(--rule-double) double var(--color-rule-strong);
+  padding: var(--space-md) var(--space-lg) calc(var(--space-md) + 6px);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.25), transparent 70%), var(--color-paper-2) var(--texture-grain);
+  box-shadow: inset 0 -1px 0 var(--color-rule-strong), 0 1px 0 var(--color-highlight);
 }
-.wordmark { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.01em; }
+.masthead::after {
+  /* stitching */
+  content: "";
+  position: absolute;
+  left: var(--space-lg);
+  right: var(--space-lg);
+  bottom: 5px;
+  height: 0;
+  border-bottom: 1.5px dashed oklch(50% 0.17 28 / 0.55);
+  filter: drop-shadow(0 1px 0 var(--color-highlight));
+}
+.wordmark { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.01em; text-shadow: var(--press); }
 .masthead-meta { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); color: var(--color-ink-2); font-size: var(--text-sm); min-width: 0; }
-.status {
-  font-family: var(--font-outlier);
-  font-size: var(--text-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: var(--space-3xs) var(--space-xs);
-  border: var(--rule-hair) solid var(--color-ink-3);
-  white-space: nowrap;
-}
-.status[data-state="frozen"], .status[data-state="panic"] { color: var(--color-accent); border-color: var(--color-accent); }
 
-main { padding: 0 var(--space-lg); max-width: 72rem; margin: 0 auto; }
-h2 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-xl); margin: 0 0 var(--space-xs); }
-.section-note { color: var(--color-ink-2); max-width: 62ch; margin: 0 0 var(--space-md); }
-section { padding: var(--space-2xl) 0; border-bottom: var(--rule-hair) solid var(--color-rule); }
+/* rubber stamp: ink pressed into paper, never perfectly even */
+.status, .stamp {
+  font-family: var(--font-outlier);
+  -webkit-mask-image: var(--texture-ink);
+  mask-image: var(--texture-ink);
+  -webkit-mask-size: 160px;
+  mask-size: 160px;
+}
+.status {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--space-3xs) var(--space-xs);
+  color: oklch(36% 0.03 60);
+  border: 2px solid currentColor;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px oklch(36% 0.03 60 / 0.35);
+  white-space: nowrap;
+  transform: rotate(-1.5deg);
+}
+.status[data-state="frozen"], .status[data-state="panic"] { color: var(--color-accent); }
+
+main { padding: 0 var(--space-lg); }
+h2 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-xl); margin: 0 0 var(--space-xs); text-shadow: var(--press); }
+.section-note { color: var(--color-ink-2); max-width: 62ch; margin: 0 0 var(--space-lg); }
+section { position: relative; padding: var(--space-2xl) 0; }
+/* section breaks are a crease in the paper: a dark line with a highlight under it */
+section + section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--space-lg));
+  right: calc(-1 * var(--space-lg));
+  height: 2px;
+  background: linear-gradient(180deg, oklch(62% 0.03 70 / 0.35) 0 1px, var(--color-highlight) 1px 2px);
+}
 
 /* ---- hero ---- */
 .hero { padding-top: var(--space-xl); }
 .hero-day { color: var(--color-ink-2); margin: 0 0 var(--space-xs); }
-.hero-figure { font-family: var(--font-display); font-weight: 500; font-size: var(--text-display); line-height: 1; margin: 0; letter-spacing: -0.02em; }
+.hero-figure {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--text-display);
+  line-height: 1;
+  margin: -0.06em 0 -0.08em;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 0 var(--color-highlight), 0 -1px 0 oklch(30% 0.03 60 / 0.12);
+}
 .hero-words { font-size: var(--text-xl); margin: var(--space-xs) 0 var(--space-lg); max-width: 34ch; text-wrap: balance; }
-.odometer { display: inline-flex; }
-.odo-char { display: inline-block; height: 1em; overflow: hidden; }
+/* each digit sits in a slot a little taller than the glyph, so the next digit on the reel never peeks in */
+.odometer { display: inline-flex; --odo-step: 1.18em; }
+.odo-char { display: inline-block; height: var(--odo-step); line-height: var(--odo-step); overflow: hidden; }
 .odo-reel { display: flex; flex-direction: column; transition: transform var(--dur-slow) var(--ease-out); }
-.odo-reel span { height: 1em; line-height: 1; }
-.budget-bar { height: var(--space-2xs); background: var(--color-paper-3); max-width: 40rem; }
-.budget-bar span { display: block; height: 100%; background: var(--color-ink); transform-origin: left; transform: scaleX(0); transition: transform var(--dur-slow) var(--ease-out); }
+.odo-reel span { height: var(--odo-step); line-height: var(--odo-step); }
+
+/* gauges are channels pressed into the page */
+.budget-bar, .float-track {
+  border-radius: 99px;
+  background: var(--color-paper-3);
+  box-shadow: var(--shadow-groove);
+  overflow: hidden;
+}
+.budget-bar { height: 10px; max-width: 40rem; }
+.float-track { height: 6px; margin-top: var(--space-2xs); }
+.budget-bar span, .float-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.budget-bar span {
+  transform: scaleX(0);
+  background: linear-gradient(180deg, oklch(40% 0.02 55), var(--color-ink) 60%);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.18);
+}
+.float-track span { background: linear-gradient(180deg, oklch(52% 0.02 58), var(--color-ink-2)); }
+
 .hero-facts { display: grid; grid-template-columns: repeat(4, minmax(0, max-content)); gap: var(--space-md) var(--space-xl); margin: var(--space-lg) 0 0; }
 .hero-facts dt, .proof-facts dt, .chain dt { color: var(--color-ink-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
 .hero-facts dd, .proof-facts dd, .chain dd { margin: 0; font-size: var(--text-lg); }
 
-/* ---- chain cards ---- */
-.chain-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: var(--rule-hair) solid var(--color-rule-strong); }
-.chain { padding: var(--space-md) var(--space-md) var(--space-md) 0; border-right: var(--rule-hair) solid var(--color-rule); }
-.chain + .chain { padding-left: var(--space-md); }
-.chain:last-child { border-right: 0; }
-.chain h3 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-lg); margin: 0 0 var(--space-sm); display: flex; justify-content: space-between; gap: var(--space-xs); }
-.chain dl { display: grid; gap: var(--space-xs); margin: 0; }
-.float-track { height: var(--space-3xs); background: var(--color-paper-3); margin-top: var(--space-3xs); }
-.float-track span { display: block; height: 100%; background: var(--color-ink-2); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
+/* ---- chain cards: index cards set on the page ---- */
+.chain-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); }
+.chain {
+  position: relative;
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, oklch(100% 0 0 / 0.35), transparent 40%),
+    var(--color-paper) var(--texture-grain);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.chain::before {
+  /* the red rule printed across the top of an index card */
+  content: "";
+  position: absolute;
+  top: calc(var(--space-md) + 1.9rem);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: oklch(50% 0.17 28 / 0.4);
+}
+.chain:nth-child(3n + 1) { transform: rotate(-0.4deg); }
+.chain:nth-child(3n + 2) { transform: rotate(0.25deg) translateY(2px); }
+.chain:nth-child(3n) { transform: rotate(-0.15deg); }
+.chain:hover { transform: translateY(-3px) rotate(0deg); box-shadow: var(--shadow-card-lift); }
+.chain h3 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-lg); margin: 0 0 var(--space-md); display: flex; justify-content: space-between; gap: var(--space-xs); text-shadow: var(--press); }
+.chain dl { display: grid; gap: var(--space-sm); margin: 0; }
 .chain .flag { font-family: var(--font-outlier); font-size: var(--text-xs); color: var(--color-accent); letter-spacing: 0.06em; text-transform: uppercase; }
 
-/* ---- ledger ---- */
-.ledger-scroll { overflow-x: auto; }
+/* ---- ledger: a ruled page with a red margin line ---- */
+.ledger-scroll { overflow-x: auto; margin: 0 calc(-1 * var(--space-xs)); padding: 0 var(--space-xs) var(--space-xs); }
 table { width: 100%; border-collapse: collapse; min-width: 40rem; }
 th { text-align: left; font-weight: 400; color: var(--color-ink-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; padding: var(--space-2xs) var(--space-xs) var(--space-2xs) 0; border-bottom: var(--rule-double) double var(--color-rule-strong); }
 td { padding: var(--space-xs) var(--space-xs) var(--space-xs) 0; border-bottom: var(--rule-hair) solid var(--color-rule); vertical-align: top; position: relative; }
+th:nth-child(2), td:nth-child(2) { padding-left: var(--space-sm); box-shadow: inset 4px 0 0 -2px oklch(50% 0.17 28 / 0.28), inset 7px 0 0 -6px oklch(50% 0.17 28 / 0.28); }
 .num { text-align: right; white-space: nowrap; }
 td.date { white-space: nowrap; color: var(--color-ink-2); font-family: var(--font-outlier); font-size: var(--text-sm); }
 td .sub { display: block; font-family: var(--font-outlier); font-size: var(--text-xs); color: var(--color-ink-3); }
 td .sub a { color: var(--color-ink-3); }
+tbody tr { transition: background-color var(--dur-fast) linear; }
+tbody tr:hover td { background: oklch(100% 0 0 / 0.28); }
 tr.caught td { background: var(--color-accent-wash); }
 .stamp {
   display: inline-block;
   margin-left: var(--space-xs);
-  font-family: var(--font-outlier);
   font-weight: 700;
   font-size: var(--text-sm);
   letter-spacing: 0.12em;
   color: var(--color-accent);
   border: 2px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px oklch(50% 0.17 28 / 0.4);
   padding: 0 var(--space-2xs);
   transform: rotate(-6deg);
+  mix-blend-mode: multiply;
 }
 tr.printing td { animation: print var(--dur-base) var(--ease-out) both; }
 tr.printing .stamp { animation: stamp var(--dur-base) var(--ease-out) var(--dur-base) both; }
 @keyframes print { from { opacity: 0; transform: translateY(-0.4rem); } to { opacity: 1; transform: none; } }
 @keyframes stamp { from { opacity: 0; transform: rotate(-6deg) scale(1.6); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
-.empty { color: var(--color-ink-2); }
+.empty { color: var(--color-ink-2); font-style: italic; }
 
-/* ---- statements ---- */
-.statement-row { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-sm); }
-.statement { border: var(--rule-hair) solid var(--color-rule-strong); padding: var(--space-sm); background: var(--color-paper-2); }
-.statement b { display: block; font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; }
+/* ---- statements: receipt slips with a torn bottom edge ---- */
+.statement-row { list-style: none; padding: 0 0 var(--space-xs); margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-md); }
+.statement {
+  position: relative;
+  z-index: 0; /* keeps the slip's paper (z-index -1) inside this card */
+  padding: var(--space-sm) var(--space-sm) calc(var(--space-sm) + 8px);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+/* the paper is its own layer: the shadow follows the torn edge and never touches the text */
+.slip {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  filter: drop-shadow(0 1px 1px oklch(30% 0.04 60 / 0.2)) drop-shadow(0 6px 8px oklch(30% 0.04 60 / 0.18));
+}
+.slip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.45), transparent 50%), oklch(97% 0.012 88) var(--texture-grain);
+  -webkit-mask: radial-gradient(6px at 50% 100%, #0000 97%, #000) 50% 100% / 13px 100% repeat-x;
+  mask: radial-gradient(6px at 50% 100%, #0000 97%, #000) 50% 100% / 13px 100% repeat-x;
+}
+.statement:nth-child(odd) { transform: rotate(-0.6deg); }
+.statement:nth-child(even) { transform: rotate(0.5deg); }
+.statement:hover { transform: translateY(-2px) rotate(0deg); }
+.statement b { display: block; font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; border-bottom: 1px dashed var(--color-rule-strong); padding-bottom: var(--space-3xs); margin-bottom: var(--space-3xs); }
 .statement span { display: block; font-size: var(--text-sm); color: var(--color-ink-2); }
 
-/* ---- proof footer ---- */
-.proof { padding: var(--space-2xl) var(--space-lg); max-width: 72rem; margin: 0 auto; }
+/* ---- proof footer: the inside back cover ---- */
+.proof {
+  padding: var(--space-2xl) var(--space-lg);
+  border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
+  background: var(--color-paper-2) var(--texture-grain);
+  box-shadow: inset 0 6px 10px -8px oklch(30% 0.04 60 / 0.35), inset 0 1px 0 var(--color-rule-strong);
+}
 .proof p { max-width: 64ch; font-size: var(--text-lg); margin: 0 0 var(--space-lg); }
 .proof-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); margin: 0; }
 .proof-facts dd { font-size: var(--text-sm); overflow-wrap: anywhere; }
@@ -117,18 +276,24 @@ tr.printing .stamp { animation: stamp var(--dur-base) var(--ease-out) var(--dur-
 .film .ledger-scroll { max-height: 26rem; overflow: hidden; }
 
 @media (max-width: 52rem) {
-  .masthead { grid-template-columns: minmax(0, 1fr); }
+  body { padding: var(--space-2xs) var(--space-2xs) var(--space-md); }
+  .book::before { transform: translate(3px, 4px); }
+  .book::after { transform: translate(6px, 7px); }
+  .masthead { grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
   .status { justify-self: start; }
   .chain-grid { grid-template-columns: minmax(0, 1fr); }
-  .chain, .chain + .chain { padding-left: 0; border-right: 0; border-bottom: var(--rule-hair) solid var(--color-rule); }
+  .chain:nth-child(n) { transform: none; }
   .hero-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .proof-facts { grid-template-columns: minmax(0, 1fr); }
   main, .masthead, .proof { padding-left: var(--space-sm); padding-right: var(--space-sm); }
+  .masthead::after { left: var(--space-sm); right: var(--space-sm); }
+  section + section::before { left: calc(-1 * var(--space-sm)); right: calc(-1 * var(--space-sm)); }
   .hero-figure { overflow-wrap: anywhere; min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .odo-reel, .budget-bar span, .float-track span { transition: none; }
+  .odo-reel, .budget-bar span, .float-track span, .chain, .statement { transition: none; }
+  .chain:hover, .statement:hover { transform: none; }
   tr.printing td, tr.printing .stamp { animation: fade 120ms linear both; }
   @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 }
