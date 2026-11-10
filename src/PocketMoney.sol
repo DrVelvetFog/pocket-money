@@ -5,12 +5,14 @@ import { AbstractReactive } from "@reactive/src/base/AbstractReactive.sol";
 import { ISystemContract } from "@reactive/src/interfaces/ISystemContract.sol";
 
 /// @title Pocket Money guard (lives on Reactive Network)
-/// @notice One daily budget for one agent across every chain it spends on. Watches the agent's
-/// USDC transfers on each chain, books them, and asks that chain's vault to top the float back
-/// up while budget remains. Paying anyone off the approved list freezes the agent everywhere.
+/// @notice House rules for a household of AI agents, across every chain they spend on. Each agent
+/// has its own daily allowance, and the household shares one daily ceiling. The guard watches
+/// each agent's USDC transfers on every chain, books them, and asks that chain's vault to top the
+/// agent's float back up while allowance remains. Paying anyone off the approved list freezes
+/// that agent on every chain; a panic on any chain freezes everything everywhere.
 contract PocketMoney is AbstractReactive {
     error NotOwner();
-    error UnknownChain(uint256 chainId);
+    error UnknownAgent(address agent);
 
     uint256 internal constant TRANSFER_TOPIC = uint256(keccak256("Transfer(address,address,uint256)"));
     uint256 internal constant PANIC_TOPIC = uint256(keccak256("Panic(address)"));
@@ -25,7 +27,16 @@ contract PocketMoney is AbstractReactive {
         address vault;
     }
 
+    struct Agent {
+        bool known;
+        bool quarantined;
+        uint256 allowance;
+        uint256 spentToday;
+        uint256 toppedUpToday;
+    }
+
     event Spent(
+        address indexed agent,
         uint256 indexed chainId,
         address indexed payee,
         uint256 amount,
@@ -33,33 +44,34 @@ contract PocketMoney is AbstractReactive {
         uint256 receiptIndex,
         bytes32 receiptHead
     );
-    event TopUpRequested(uint256 indexed chainId, uint64 indexed seq, uint256 amount);
-    event Quarantined(uint256 indexed chainId, address indexed payee, uint256 txHash);
+    event TopUpRequested(address indexed agent, uint256 indexed chainId, uint64 seq, uint256 amount);
+    event Quarantined(address indexed agent, uint256 indexed chainId, address payee, uint256 txHash);
     event PanicSeen(uint256 indexed chainId, address indexed by, uint256 txHash);
     event Statement(
         uint256 indexed day, uint256 spent, uint256 toppedUp, uint256 receiptCount, bytes32 receiptHead
     );
+    event AgentStatement(uint256 indexed day, address indexed agent, uint256 spent, uint256 toppedUp);
     event ChainAdded(uint256 indexed chainId, address usdc, address vault);
+    event AgentSet(address indexed agent, uint256 allowance);
     event PayeeSet(address indexed payee, bool approved);
-    event BudgetSet(uint256 dailyBudget);
+    event CeilingSet(uint256 ceiling);
     event CronSet(bool on);
-    event Resumed();
+    event Resumed(address indexed agent); // agent = 0 means the household-wide panic
 
     address public immutable owner;
-    address public immutable agent;
 
-    uint256 public dailyBudget;
+    uint256 public ceiling;
     uint256 public day;
     uint256 public dayStart;
     uint256 public spentToday;
     uint256 public toppedUpToday;
-
-    bool public quarantined;
     bool public panicked;
 
     bytes32 public receiptHead;
     uint256 public receiptCount;
 
+    mapping(address => Agent) public agents;
+    address[] public agentList;
     mapping(address => bool) public approvedPayee;
     mapping(uint256 => Chain) public chains;
     uint256[] public chainIds;
@@ -70,10 +82,9 @@ contract PocketMoney is AbstractReactive {
         _;
     }
 
-    constructor(address agent_, uint256 dailyBudget_) payable {
+    constructor(uint256 ceiling_) payable {
         owner = msg.sender;
-        agent = agent_;
-        dailyBudget = dailyBudget_;
+        ceiling = ceiling_;
         dayStart = block.timestamp;
     }
 
@@ -92,59 +103,61 @@ contract PocketMoney is AbstractReactive {
     function _onTransfer(LogRecord calldata log_) internal {
         Chain memory c = chains[log_.chainId];
         if (c.usdc == address(0) || log_.contractAddress != c.usdc) return;
-        if (address(uint160(log_.topic1)) != agent) return;
+        address agentAddr = address(uint160(log_.topic1));
+        Agent storage a = agents[agentAddr];
+        if (!a.known) return;
 
         address payee = address(uint160(log_.topic2));
         uint256 amount = abi.decode(log_.data, (uint256));
 
+        a.spentToday += amount;
         spentToday += amount;
         receiptHead = keccak256(
-            abi.encode(receiptHead, log_.chainId, log_.txHash, log_.logIndex, payee, amount)
+            abi.encode(receiptHead, log_.chainId, log_.txHash, log_.logIndex, agentAddr, payee, amount)
         );
-        emit Spent(log_.chainId, payee, amount, log_.txHash, receiptCount++, receiptHead);
+        emit Spent(agentAddr, log_.chainId, payee, amount, log_.txHash, receiptCount++, receiptHead);
 
         if (!approvedPayee[payee]) {
-            if (!quarantined) {
-                quarantined = true;
-                emit Quarantined(log_.chainId, payee, log_.txHash);
-                _freezeAll("unknown payee");
+            if (!a.quarantined) {
+                a.quarantined = true;
+                emit Quarantined(agentAddr, log_.chainId, payee, log_.txHash);
+                _toAllVaults(
+                    abi.encodeWithSignature(
+                        "freezeAgent(address,address,bytes32)", address(0), agentAddr, bytes32("unknown payee")
+                    )
+                );
             }
             return;
         }
-        if (quarantined || panicked) return;
+        if (a.quarantined || panicked) return;
 
-        uint256 left = toppedUpToday >= dailyBudget ? 0 : dailyBudget - toppedUpToday;
-        uint256 refill = amount < left ? amount : left;
+        uint256 refill = _min(amount, _left(a.allowance, a.toppedUpToday));
+        refill = _min(refill, _left(ceiling, toppedUpToday));
         if (refill == 0) return;
 
+        a.toppedUpToday += refill;
         toppedUpToday += refill;
         uint64 seq = ++seqOf[log_.chainId];
-        emit TopUpRequested(log_.chainId, seq, refill);
+        emit TopUpRequested(agentAddr, log_.chainId, seq, refill);
         _callback(
             log_.chainId,
             c.vault,
-            abi.encodeWithSignature(
-                "topUp(address,address,uint256,uint64)", address(0), agent, refill, seq
-            )
+            abi.encodeWithSignature("topUp(address,address,uint256,uint64)", address(0), agentAddr, refill, seq)
         );
     }
 
     function _onPanic(LogRecord calldata log_) internal {
         if (log_.contractAddress != chains[log_.chainId].vault) return;
-        address by = address(uint160(log_.topic1));
-        if (!panicked) {
-            panicked = true;
-            emit PanicSeen(log_.chainId, by, log_.txHash);
-            _freezeAll("panic");
-        }
+        if (panicked) return;
+        panicked = true;
+        emit PanicSeen(log_.chainId, address(uint160(log_.topic1)), log_.txHash);
+        _toAllVaults(abi.encodeWithSignature("freeze(address,bytes32)", address(0), bytes32("panic")));
     }
 
-    function _freezeAll(bytes32 reason) internal {
+    function _toAllVaults(bytes memory payload) internal {
         for (uint256 i; i < chainIds.length; ++i) {
             uint256 id = chainIds[i];
-            _callback(
-                id, chains[id].vault, abi.encodeWithSignature("freeze(address,bytes32)", address(0), reason)
-            );
+            _callback(id, chains[id].vault, payload);
         }
     }
 
@@ -156,10 +169,16 @@ contract PocketMoney is AbstractReactive {
         );
     }
 
-    /// @dev Closes out any finished day: emits its statement and resets the counters.
+    /// @dev Closes out any finished day: emits its statements and resets the counters.
     function _roll() internal {
         if (block.timestamp < dayStart + 1 days) return;
         emit Statement(day, spentToday, toppedUpToday, receiptCount, receiptHead);
+        for (uint256 i; i < agentList.length; ++i) {
+            Agent storage a = agents[agentList[i]];
+            emit AgentStatement(day, agentList[i], a.spentToday, a.toppedUpToday);
+            a.spentToday = 0;
+            a.toppedUpToday = 0;
+        }
         uint256 elapsed = (block.timestamp - dayStart) / 1 days;
         dayStart += elapsed * 1 days;
         day += elapsed;
@@ -167,17 +186,39 @@ contract PocketMoney is AbstractReactive {
         toppedUpToday = 0;
     }
 
+    function _left(uint256 cap, uint256 used) internal pure returns (uint256) {
+        return used >= cap ? 0 : cap - used;
+    }
+
+    function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    function _watch(uint256 chainId, address usdc, address agent) internal {
+        SYSTEM.subscribe(chainId, usdc, TRANSFER_TOPIC, uint256(uint160(agent)), REACTIVE_IGNORE, REACTIVE_IGNORE);
+    }
+
     // ---- owner (called directly on Reactive Network) ----
 
-    /// @notice Register a chain: watch the agent's USDC transfers there and the vault's panic button.
+    /// @notice Register a chain: watch every agent's USDC transfers there and the vault's panic button.
     function addChain(uint256 chainId, address usdc, address vault) external onlyOwner {
         if (chains[chainId].vault == address(0)) chainIds.push(chainId);
         chains[chainId] = Chain(usdc, vault);
-        SYSTEM.subscribe(
-            chainId, usdc, TRANSFER_TOPIC, uint256(uint160(agent)), REACTIVE_IGNORE, REACTIVE_IGNORE
-        );
+        for (uint256 i; i < agentList.length; ++i) _watch(chainId, usdc, agentList[i]);
         SYSTEM.subscribe(chainId, vault, PANIC_TOPIC, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
         emit ChainAdded(chainId, usdc, vault);
+    }
+
+    /// @notice Add an agent (watched on every registered chain) or change its daily allowance.
+    function setAgent(address agent, uint256 allowance) external onlyOwner {
+        Agent storage a = agents[agent];
+        if (!a.known) {
+            a.known = true;
+            agentList.push(agent);
+            for (uint256 i; i < chainIds.length; ++i) _watch(chainIds[i], chains[chainIds[i]].usdc, agent);
+        }
+        a.allowance = allowance;
+        emit AgentSet(agent, allowance);
     }
 
     function setPayee(address payee, bool approved) external onlyOwner {
@@ -185,9 +226,9 @@ contract PocketMoney is AbstractReactive {
         emit PayeeSet(payee, approved);
     }
 
-    function setBudget(uint256 dailyBudget_) external onlyOwner {
-        dailyBudget = dailyBudget_;
-        emit BudgetSet(dailyBudget_);
+    function setCeiling(uint256 ceiling_) external onlyOwner {
+        ceiling = ceiling_;
+        emit CeilingSet(ceiling_);
     }
 
     /// @notice Daily statements on the network's ~3h cron. Billed every tick, so it can be paused.
@@ -200,11 +241,17 @@ contract PocketMoney is AbstractReactive {
         emit CronSet(on);
     }
 
-    /// @notice Clear quarantine/panic here. Each vault still has to be unfrozen by its owner.
+    /// @notice Lift one agent's quarantine here. Each vault's owner still unfreezes that agent there.
+    function resumeAgent(address agent) external onlyOwner {
+        if (!agents[agent].known) revert UnknownAgent(agent);
+        agents[agent].quarantined = false;
+        emit Resumed(agent);
+    }
+
+    /// @notice Lift the household-wide panic here. Each vault's owner still unfreezes there.
     function resume() external onlyOwner {
-        quarantined = false;
         panicked = false;
-        emit Resumed();
+        emit Resumed(address(0));
     }
 
     function withdraw(address payable to, uint256 amount) external onlyOwner {
@@ -217,5 +264,9 @@ contract PocketMoney is AbstractReactive {
 
     function chainCount() external view returns (uint256) {
         return chainIds.length;
+    }
+
+    function agentCount() external view returns (uint256) {
+        return agentList.length;
     }
 }
