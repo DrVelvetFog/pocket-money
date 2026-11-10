@@ -1,0 +1,9 @@
+pm-owner keystore password: 
+== approve + burn 100000 on 84532 for 1301 (fast transfer)
+   approve 0xd21e2b5511674689c844f733b4f1c55a908b0b4de663e8325f7661f28e5d6086 0x1
+   burn 0x14d956bf54c2fd04113423d7068f607899618d55af747e08f57c87df2f4f5f0d 0x1
+== waiting for Circle's attestation
+   attested after 6s: complete
+== mint on 1301
+   mint 0x29314bc45ba6ffa000505f29f31511b94332c4cab237d3073413bd02771c5437 0x1
+owner USDC on 1301: 14000000 -> 14099987 (+99987)

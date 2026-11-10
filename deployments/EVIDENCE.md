@@ -127,3 +127,17 @@ Logs: `deployments/deploy-v3-log.txt`, `deployments/week2-loops-v3-log.txt`.
 - **x402's own client-side limits are set too** (only Circle USDC on these chains, ≤ $0.25 per payment), but they live in the agent's process. Pocket Money's limits are on-chain and survive a stolen key.
 
 Log: `deployments/x402-demo-log.txt`.
+
+## Stretch probe: Circle CCTP v2 fast transfer works on our testnets (2026-11-10)
+
+The owner moved $0.10 USDC from Base Sepolia (domain 6) to Unichain Sepolia (domain 10).
+- **Contracts:** TokenMessengerV2 `0x8FE6B999…2DAA` and MessageTransmitterV2 `0xE737e5cE…E275`, the same address on every testnet.
+
+| Step | Chain | Tx |
+|---|---|---|
+| approve | Base Sepolia | `0xd21e2b55…6086` |
+| depositForBurn (fast, threshold 1000) | Base Sepolia | `0x14d956bf…5f0d` |
+| Circle attestation | iris-api-sandbox | complete after **6 s** |
+| receiveMessage (mint) | Unichain Sepolia | `0x29314bc4…5437` |
+
+**Result:** the owner's Unichain balance went up by 99987. The 13-unit fee is 1.3 bps, matching `/v2/burn/USDC/fees/6/10`.
