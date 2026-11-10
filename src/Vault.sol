@@ -70,6 +70,9 @@ contract Vault is AbstractCallback {
     mapping(address => Budget) public budgetOf;
     uint256 public ceiling;
     uint256 public householdSpent;
+    /// @dev The household's day boundary comes from the latest sync of ANY agent, so one agent's
+    /// spending after midnight counts against the household for everyone (found by fuzzing).
+    uint256 public householdDayEnds;
     uint64 public syncVersion;
     uint256 public syncedAt;
 
@@ -104,8 +107,11 @@ contract Vault is AbstractCallback {
     /// @notice What this agent may still spend today across every chain, per the latest mirror.
     function spendLeft(address agent) public view returns (uint256) {
         Budget memory b = budgetOf[agent];
-        if (block.timestamp >= b.dayEnds) return _min(b.allowance, ceiling); // a new day has begun
-        return _min(_left(b.allowance, b.spent), _left(ceiling, householdSpent));
+        // each side resets on its own boundary: an agent's spend from its own last sync, the
+        // household's from the newest sync of any agent
+        uint256 agentLeft = block.timestamp >= b.dayEnds ? b.allowance : _left(b.allowance, b.spent);
+        uint256 householdLeft = block.timestamp >= householdDayEnds ? ceiling : _left(ceiling, householdSpent);
+        return _min(agentLeft, householdLeft);
     }
 
     /// @notice Check before settling: would this payment be within the agent's cross-chain budget?
@@ -160,6 +166,7 @@ contract Vault is AbstractCallback {
         budgetOf[agent] = Budget(allowance, agentSpent, dayEnds);
         ceiling = ceiling_;
         householdSpent = householdSpent_;
+        householdDayEnds = dayEnds;
         emit BudgetSynced(agent, version, _left(allowance, agentSpent), _left(ceiling_, householdSpent_));
     }
 
