@@ -36,9 +36,25 @@ printf '%s' "$pw" > "$pwdir/pw"; chmod 600 "$pwdir/pw"; unset pw
 SIGN=(--account pm-owner --password-file "$pwdir/pw")
 
 step() { echo; echo "== $*"; }
-send() { cast send "$@" "${SIGN[@]}" --json | jq -r '"   tx \(.transactionHash) status \(.status)"'; }
+# Public testnet RPCs sometimes hand back a stale nonce; wait and retry instead of dying.
+send() {
+  local i out
+  for i in 1 2 3 4; do
+    if out=$(cast send "$@" "${SIGN[@]}" --json 2>&1); then
+      jq -r '"   tx \(.transactionHash) status \(.status)"' <<<"$out"; return 0
+    fi
+    grep -qi 'nonce' <<<"$out" || { echo "$out" >&2; return 1; }
+    echo "   (stale nonce, retrying)"; sleep 4
+  done
+  echo "$out" >&2; return 1
+}
+num() { cut -d' ' -f1; }
+ZERO=0x0000000000000000000000000000000000000000
 
-if [[ -f deployments/base-sepolia.env && -z "${KEEP_V1:-}" ]]; then
+if [[ -n "${RESUME:-}" ]]; then
+  source $OUT
+  step "resuming with PocketMoney $PM"
+elif [[ -f deployments/base-sepolia.env && -z "${KEEP_V1:-}" ]]; then
   step "0 wind down v1 (recover lREACT and the Base vault's funds)"
   V1PM=$(grep '^PM=' deployments/base-sepolia.env | cut -d= -f2)
   bal=$(cast balance $V1PM --rpc-url $LASNA)
@@ -49,25 +65,36 @@ if [[ -f deployments/base-sepolia.env && -z "${KEEP_V1:-}" ]]; then
   [[ "$e" != "0" ]] && send $V1PM "withdraw(address,address,uint256)" 0x0000000000000000000000000000000000000000 $OWNER $e --rpc-url $(rpc 84532)
 fi
 
-step "1 deploy PocketMoney v2 on Lasna"
-PM=$(forge create src/PocketMoney.sol:PocketMoney --rpc-url $LASNA "${SIGN[@]}" --broadcast \
-  --value $PM_FUND --json --constructor-args $CEILING | jq -r .deployedTo)
-echo "   PocketMoney $PM"
-{ echo "OWNER=$OWNER"; echo "AGENT=$AGENT"; echo "PAYEE=$PAYEE"; echo "PM=$PM"; } > $OUT
+if [[ -z "${RESUME:-}" ]]; then
+  step "1 deploy PocketMoney v2 on Lasna"
+  PM=$(forge create src/PocketMoney.sol:PocketMoney --rpc-url $LASNA "${SIGN[@]}" --broadcast \
+    --value $PM_FUND --json --constructor-args $CEILING | jq -r .deployedTo)
+  echo "   PocketMoney $PM"
+  { echo "OWNER=$OWNER"; echo "AGENT=$AGENT"; echo "PAYEE=$PAYEE"; echo "PM=$PM"; } > $OUT
+fi
 
+# Every step checks chain state first, so a re-run (RESUME=1) only does what is missing.
 for c in "${CHAINS[@]}"; do
+  R=$(rpc $c); U=$(usdc $c)
   step "2 vault on chain $c"
-  V=$(forge create src/Vault.sol:Vault --rpc-url $(rpc $c) "${SIGN[@]}" --broadcast \
-    --value $VAULT_ETH --json --constructor-args $(proxy $c) $PM $(usdc $c) | jq -r .deployedTo)
+  V=$(eval echo \${VAULT_$c:-})
+  if [[ -z "$V" ]]; then
+    V=$(forge create src/Vault.sol:Vault --rpc-url $R "${SIGN[@]}" --broadcast \
+      --value $VAULT_ETH --json --constructor-args $(proxy $c) $PM $U | jq -r .deployedTo)
+    echo "VAULT_$c=$V" >> $OUT
+  fi
   echo "   Vault $V"
-  echo "VAULT_$c=$V" >> $OUT
-  send $V "setFloat(address,uint256)" $AGENT $FLOAT --rpc-url $(rpc $c)
-  send $(usdc $c) "transfer(address,uint256)" $V $VAULT_USDC --rpc-url $(rpc $c)
-  a=$(cast call $(usdc $c) "balanceOf(address)(uint256)" $AGENT --rpc-url $(rpc $c) | cut -d' ' -f1)
-  (( a < FLOAT )) && send $(usdc $c) "transfer(address,uint256)" $AGENT $((FLOAT - a)) --rpc-url $(rpc $c)
-  send $AGENT --value $AGENT_ETH --rpc-url $(rpc $c)
+  [[ $(cast call $V "floatOf(address)(uint256)" $AGENT --rpc-url $R | num) == $FLOAT ]] ||
+    send $V "setFloat(address,uint256)" $AGENT $FLOAT --rpc-url $R
+  vb=$(cast call $U "balanceOf(address)(uint256)" $V --rpc-url $R | num)
+  (( vb < VAULT_USDC )) && send $U "transfer(address,uint256)" $V $((VAULT_USDC - vb)) --rpc-url $R
+  a=$(cast call $U "balanceOf(address)(uint256)" $AGENT --rpc-url $R | num)
+  (( a < FLOAT )) && send $U "transfer(address,uint256)" $AGENT $((FLOAT - a)) --rpc-url $R
+  [[ $(cast balance $AGENT --rpc-url $R) == 0 ]] && send $AGENT --value $AGENT_ETH --rpc-url $R
   step "3 register chain $c on the guard"
-  send $PM "addChain(uint256,address,address)" $c $(usdc $c) $V --rpc-url $LASNA
+  reg=$(cast call $PM "chains(uint256)(address,address)" $c --rpc-url $LASNA | tail -1)
+  [[ $(tr A-F a-f <<<"$reg") == $(tr A-F a-f <<<"$V") ]] ||
+    send $PM "addChain(uint256,address,address)" $c $U $V --rpc-url $LASNA
 done
 
 step "4 household: agent allowance, ceiling, payee"
