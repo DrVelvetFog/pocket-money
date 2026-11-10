@@ -68,3 +68,43 @@ Same address on both chains because each was the owner's first deploy (nonce 0) 
 **Resets:** after each drill, `resumeAgent` / `resume` on the guard plus `unfreezeAgent` / `unfreeze` on each vault left everything un-frozen (checked on-chain).
 
 Full output: `deployments/week2-loops-log.txt`.
+
+## Week 2, v3: gas fix live, every loop passes on all three chains (2026-11-10)
+
+**Contracts (current)**
+
+| | Address |
+|---|---|
+| Guard (Lasna) | `0x675a63b8C8e56EDF2e4d4B796d6296F485Ee8707` |
+| Vault, Base Sepolia | `0x675a63b8C8e56EDF2e4d4B796d6296F485Ee8707` |
+| Vault, Unichain Sepolia | `0x0b7532d60381dBe632bCE7D013a00b17FDE6bC1F` |
+| Vault, Ethereum Sepolia | `0x89dBdF104dc6b2A23E05943297D890c1B80E1271` |
+
+The guard and the Base vault share an address by nonce coincidence; they're different contracts on different chains.
+
+**v2 retired via `migrate()`, live.** Each old vault ended frozen with $0. Txs:
+- `0xe446a547…8cd1`
+- `0xe5589156…669c`
+- `0x9df35755…04bd`
+- guard lREACT returned: `0x4d7ea607…72cf`
+
+**Loop 1: spend → top-up**
+
+| Chain | Origin | Reactive | Callback | Delay |
+|---|---|---|---|---|
+| Base Sepolia | `0x5cfa71ae…83b2` (blk 56942433) | `0x9a6d24c2…17ca` | `0x1ff798ab…9b7f` (blk 56942442) | 9 blocks, ~1.8 s |
+| Unichain Sepolia | `0xb73dfb85…dc70` (blk 67457934) | `0x6b5254da…fad0` | `0xb31c9bd2…b002` (blk 67457936) | 2 blocks, ~2 s |
+| Ethereum Sepolia | `0x09f90efb…f535` (blk 12104356) | `0x218dfb78…8a4d` | `0xc9e5af38…1756` (blk 12104357) | **next block, ≤12 s** |
+
+**Loop 2: unknown payee → agent frozen on every chain.**
+- origin `0x56860bba…84a8` (Unichain) → reactive `0x993e90cb…394a`
+- `AgentFrozen` on Base `0x7349d262…b131`, on Unichain `0xcbd0b9dc…a429`, on Ethereum Sepolia `0x44069de7…51bb`
+- The agent was left at $0.75 on Unichain: the stray payment is never refilled.
+
+**Loop 3: panic on Ethereum Sepolia → every vault frozen.**
+- panic `0xd096c24e…f0f7` → reactive `0x188af805…5b1e`
+- `Frozen` on Base `0x315f0a0c…ed49`, on Unichain `0xb7a93657…fd33`, on Ethereum Sepolia `0x9c9b35a9…cd69`
+
+**After resets (checked on-chain):** not panicked, agent not quarantined, every vault un-frozen.
+
+Logs: `deployments/deploy-v3-log.txt`, `deployments/week2-loops-v3-log.txt`.
