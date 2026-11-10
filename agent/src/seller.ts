@@ -34,7 +34,7 @@ for (const n of NETS) {
     sendTransaction: (a) => c.sendTransaction({ ...a, account, chain: n.chain } as never),
     waitForTransactionReceipt: (a) => c.waitForTransactionReceipt(a as never),
     getCode: (a) => c.getCode(a as never),
-  } as never);
+  });
   facilitator.register(`eip155:${n.id}`, new ExactFacilitatorScheme(signer));
 }
 
