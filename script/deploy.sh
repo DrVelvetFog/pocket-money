@@ -32,7 +32,7 @@ LOW_WATER=${LOW_WATER:-3000000}    # rebalance a vault below $3 ...
 TARGET=${TARGET:-4000000}          # ... back up to $4
 MAX_FEE=${MAX_FEE:-1000}           # CCTP fast-transfer fee ceiling ($0.001)
 REBALANCE_CAP=${REBALANCE_CAP:-5000000}
-PM_FUND=${PM_FUND:-2.2ether}       # lREACT for reactive fees
+PM_FUND=${PM_FUND:-1.7ether}       # lREACT for reactive fees
 VAULT_ETH=${VAULT_ETH:-0.0002ether}
 AGENT_ETH=${AGENT_ETH:-0.00002ether} # until the x402 seller: plain transfers need gas
 
@@ -152,6 +152,7 @@ step "4 household: payees, then the agent (which pushes its budget mirror to eve
 send $PM "setPayee(address,bool)" $PAYEE true --rpc-url $LASNA
 send $PM "setPayee(address,bool)" $SELLER true --rpc-url $LASNA
 [[ -n "${SUI_SHOP:-}" ]] && send $PM "setForeignPayee(bytes32,bool)" $SUI_SHOP true --rpc-url $LASNA
+[[ -n "${SOL_SHOP_ID:-}" ]] && send $PM "setForeignPayee(bytes32,bool)" $SOL_SHOP_ID true --rpc-url $LASNA
 send $PM "setAgent(address,uint256)" $AGENT $ALLOWANCE --rpc-url $LASNA
 
 echo; echo "Deployed. Saved to $OUT"; cat $OUT
