@@ -36,7 +36,20 @@ contract Vault is AbstractCallback {
 
     struct Budget {
         uint256 allowance;
+        uint256 extra; // today's raise, dropped at dayEnds
         uint256 spent;
+        uint256 dayEnds;
+    }
+
+    /// @dev What the guard pushes after every booking. Base limits and today's raises travel
+    /// separately so a vault can drop the raises on its own at midnight (found by fuzzing).
+    struct Mirror {
+        uint256 allowance;
+        uint256 extra;
+        uint256 spent;
+        uint256 ceiling;
+        uint256 householdExtra;
+        uint256 householdSpent;
         uint256 dayEnds;
     }
 
@@ -48,6 +61,9 @@ contract Vault is AbstractCallback {
     event Unfrozen(address indexed agent); // agent = 0 means the whole vault
     /// @notice Watched by the guard on Reactive: a panic on any chain stops top-ups everywhere.
     event Panic(address indexed by);
+    /// @notice Watched by the guard on Reactive: the owner grants an agent extra allowance for
+    /// today from whichever chain their wallet is on.
+    event RaiseApproved(address indexed agent, uint256 amount, address by);
     event FloatSet(address indexed agent, uint256 float);
     event PeerSet(uint32 indexed domain, bytes32 vault);
     event RebalanceCapSet(uint256 cap);
@@ -69,6 +85,7 @@ contract Vault is AbstractCallback {
 
     mapping(address => Budget) public budgetOf;
     uint256 public ceiling;
+    uint256 public householdExtra;
     uint256 public householdSpent;
     /// @dev The household's day boundary comes from the latest sync of ANY agent, so one agent's
     /// spending after midnight counts against the household for everyone (found by fuzzing).
@@ -109,8 +126,9 @@ contract Vault is AbstractCallback {
         Budget memory b = budgetOf[agent];
         // each side resets on its own boundary: an agent's spend from its own last sync, the
         // household's from the newest sync of any agent
-        uint256 agentLeft = block.timestamp >= b.dayEnds ? b.allowance : _left(b.allowance, b.spent);
-        uint256 householdLeft = block.timestamp >= householdDayEnds ? ceiling : _left(ceiling, householdSpent);
+        uint256 agentLeft = block.timestamp >= b.dayEnds ? b.allowance : _left(b.allowance + b.extra, b.spent);
+        uint256 householdLeft =
+            block.timestamp >= householdDayEnds ? ceiling : _left(ceiling + householdExtra, householdSpent);
         return _min(agentLeft, householdLeft);
     }
 
@@ -150,24 +168,18 @@ contract Vault is AbstractCallback {
     }
 
     /// @notice Mirror of one agent's cross-chain budget. Older versions are ignored.
-    function syncBudget(
-        address guard_,
-        address agent,
-        uint256 allowance,
-        uint256 agentSpent,
-        uint256 ceiling_,
-        uint256 householdSpent_,
-        uint256 dayEnds,
-        uint64 version
-    ) external onlyGuard(guard_) {
+    function syncBudget(address guard_, address agent, Mirror calldata m, uint64 version) external onlyGuard(guard_) {
         if (version <= syncVersion) return;
         syncVersion = version;
         syncedAt = block.timestamp;
-        budgetOf[agent] = Budget(allowance, agentSpent, dayEnds);
-        ceiling = ceiling_;
-        householdSpent = householdSpent_;
-        householdDayEnds = dayEnds;
-        emit BudgetSynced(agent, version, _left(allowance, agentSpent), _left(ceiling_, householdSpent_));
+        budgetOf[agent] = Budget(m.allowance, m.extra, m.spent, m.dayEnds);
+        ceiling = m.ceiling;
+        householdExtra = m.householdExtra;
+        householdSpent = m.householdSpent;
+        householdDayEnds = m.dayEnds;
+        emit BudgetSynced(
+            agent, version, _left(m.allowance + m.extra, m.spent), _left(m.ceiling + m.householdExtra, m.householdSpent)
+        );
     }
 
     /// @notice One agent paid someone off the list somewhere: stop topping it up here.
@@ -207,6 +219,11 @@ contract Vault is AbstractCallback {
         frozen = true;
         emit Panic(msg.sender);
         emit Frozen("panic");
+    }
+
+    /// @notice Approve a one-day raise for an agent. Reactive applies it on every chain.
+    function approveRaise(address agent, uint256 amount) external onlyOwner {
+        emit RaiseApproved(agent, amount, msg.sender);
     }
 
     function unfreeze() external onlyOwner {

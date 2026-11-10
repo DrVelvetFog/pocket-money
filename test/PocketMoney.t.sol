@@ -19,8 +19,8 @@ contract PocketMoneyTest is ReactiveSim {
     // ---- subscriptions ----
 
     function test_subscriptions() public view {
-        // self (sync) + per chain: agents x2 + vault out + vault in + panic = 5 x 3 + inbox
-        assertEq(sys.subCount(), 1 + 15 + 1);
+        // self (sync) + per chain: agents x2 + vault out + vault in + panic + raise = 6 x 3 + inbox
+        assertEq(sys.subCount(), 1 + 18 + 1); // + raise per vault
         assertEq(pm.agentCount(), 2);
         assertEq(pm.chainCount(), 3);
     }
@@ -124,8 +124,8 @@ contract PocketMoneyTest is ReactiveSim {
         _spend(andy, BASE, shop, 4e6);
         uint64 v = vault[ETH].syncVersion();
         bytes memory p = abi.encodeWithSignature(
-            "syncBudget(address,address,uint256,uint256,uint256,uint256,uint256,uint64)",
-            address(0), andy, ALLOWANCE, uint256(0), CEILING, uint256(0), block.timestamp + 1 days, v
+            "syncBudget(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint64)",
+            address(0), andy, ALLOWANCE, uint256(0), uint256(0), CEILING, uint256(0), uint256(0), block.timestamp + 1 days, v
         );
         proxy.deliver(address(pm), address(vault[ETH]), p);
         (, uint256 left,) = vault[ETH].canSpend(andy, 1);
@@ -371,5 +371,75 @@ contract PocketMoneyTest is ReactiveSim {
         _foreign(andy, SUI_SHOP, 6e6, keccak256("after-midnight"));
         (, uint256 left,) = vault[UNI].canSpend(plummy, 1);
         assertEq(left, CEILING - 6e6 < ALLOWANCE ? CEILING - 6e6 : ALLOWANCE); // household left wins
+    }
+
+    // ---- ask for a raise, approved from any chain ----
+
+    function test_raiseApprovedOnOneChainLiftsTheMirrorEverywhere() public {
+        _spend(andy, BASE, shop, 5e6);
+        _spend(andy, UNI, shop, 5e6); // andy is out: $10 of $10
+        (bool ok,, bytes32 why) = vault[ETH].canSpend(andy, 1e6);
+        assertFalse(ok);
+        assertEq(why, bytes32("over budget"));
+        vault[UNI].approveRaise(andy, 2e6); // owner approves from Unichain
+        _pump();
+        assertEq(pm.extraToday(andy), 2e6);
+        for (uint256 i; i < ids.length; ++i) {
+            (bool ok2, uint256 left,) = vault[ids[i]].canSpend(andy, 1e6);
+            assertTrue(ok2);
+            assertEq(left, 2e6);
+        }
+    }
+
+    function test_raiseAlsoTopsUpAgain() public {
+        _spend(andy, BASE, shop, 5e6);
+        _spend(andy, UNI, shop, 5e6);
+        _spend(andy, ETH, shop, 1e6); // no allowance left: not topped up
+        assertEq(_bal(andy, ETH), FLOAT - 1e6);
+        vault[BASE].approveRaise(andy, 1e6);
+        _pump();
+        _spend(andy, ETH, shop, 1e6); // now refilled
+        assertEq(_bal(andy, ETH), FLOAT - 1e6);
+    }
+
+    function test_raiseLastsOneDay() public {
+        vault[ETH].approveRaise(plummy, 3e6);
+        _pump();
+        assertEq(pm.extraToday(plummy), 3e6);
+        vm.warp(block.timestamp + 1 days + 1);
+        _spend(plummy, BASE, shop, 1e6); // first react of the new day rolls it over
+        assertEq(pm.extraToday(plummy), 0);
+        assertEq(pm.householdExtraToday(), 0);
+    }
+
+    function test_onlyTheOwnerCanApproveARaise() public {
+        vm.prank(thief);
+        vm.expectRevert(Vault.NotOwner.selector);
+        vault[BASE].approveRaise(andy, 1e6);
+    }
+
+    function test_raiseFromAStrangerContractIsIgnored() public {
+        bytes32 t0 = keccak256("RaiseApproved(address,uint256,address)");
+        IReactive.LogRecord memory r;
+        r.chainId = BASE;
+        r.contractAddress = thief;
+        r.topic0 = uint256(t0);
+        r.topic1 = uint256(uint160(andy));
+        r.data = abi.encode(uint256(1e6), thief);
+        vm.prank(address(0x8888888888888888888888888888888888888888));
+        pm.react(r);
+        assertEq(pm.extraToday(andy), 0);
+    }
+
+    /// Found by the invariant fuzzer: a raise must not outlive its day in any vault's mirror,
+    /// even before the guard sees another event.
+    function test_regression_raiseExpiresAtMidnightInTheMirror() public {
+        vault[BASE].approveRaise(andy, 2e6);
+        _pump();
+        (, uint256 left,) = vault[ETH].canSpend(andy, 1);
+        assertEq(left, ALLOWANCE + 2e6);
+        vm.warp(block.timestamp + 1 days + 1);
+        (, left,) = vault[ETH].canSpend(andy, 1);
+        assertEq(left, ALLOWANCE);
     }
 }

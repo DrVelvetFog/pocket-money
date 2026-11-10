@@ -13,6 +13,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 | Buggy or compromised guard | Vault caps every top-up at the agent's real balance vs its float; CCTP refills only go to owner-approved peer vaults, under an owner cap | Agent never above float (P1); no drain via CCTP |
 | Guard or vault out of gas money | Reactive delivers nothing to a contract in debt | Fails closed: spending stops, never grows |
 | Owner panic on any chain | Every vault freezes | All top-ups stop |
+| Agent needs more today | The owner approves a one-day raise from any chain's vault (`approveRaise`). Reactive lifts the allowance and household ceiling and re-syncs every mirror. | Expires at the next daily rollover |
 
 ## Trust assumptions (stated, not hidden)
 
@@ -24,7 +25,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 
 ## How we checked
 
-### Unit tests (35)
+### Unit tests (42)
 `forge test --mc PocketMoneyTest`.
 - **Approach:** a Reactive Network simulator (`test/ReactiveSim.sol`) matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the callbacks it requests through a proxy mock. It repeats until nothing new happens.
 - **Covers:** every loop, callback authentication, replay, the float cap, the household ceiling, foreign spend, CCTP refills, migration, and the 900k gas cap (the worst `react()` measures 187k).
@@ -44,11 +45,22 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 | P11 | USDC is conserved across all chains (every CCTP burn is minted back) |
 | P12 | Every payment gets exactly one receipt |
 
-**Bug the fuzzer found:**
-- **What broke:** after midnight, a vault reset the *household* spend from the paying agent's own sync, so other agents' mirrors ignored today's household spending.
-- **How it was caught:** the fuzzer shrank it to 3 steps.
-- **Fix:** vaults now keep the household's day boundary from the newest sync of any agent.
-- **Regression test:** the shrunk case is `test_regression_householdSpendAfterMidnightReachesOtherAgentsMirror`; it fails on the old vault and passes now.
+**Bugs the fuzzer found (both fixed, both kept as regression tests):**
+
+1. **The household day boundary.**
+   - **What broke:** after midnight, a vault reset the *household* spend from the paying agent's own sync, so other agents' mirrors ignored today's household spending.
+   - **How it was caught:** shrunk to 3 steps.
+   - **Fix:** vaults keep the household's day boundary from the newest sync of any agent.
+   - **Regression test:** `test_regression_householdSpendAfterMidnightReachesOtherAgentsMirror`, which fails on the old vault.
+2. **Raises outliving their day.**
+   - **What broke:** a one-day raise was synced as part of the allowance, so a vault's mirror carried it past midnight until the next sync.
+   - **How it was caught:** shrunk to 2 steps (raise, then midnight).
+   - **Fix:** base limits and today's raises are synced separately, so vaults drop the raises at the day boundary on their own.
+   - **Regression test:** `test_regression_raiseExpiresAtMidnightInTheMirror`.
+
+**Campaign sizes:**
+- default: 64 runs × 40 steps
+- deep: `FOUNDRY_INVARIANT_RUNS=512 FOUNDRY_INVARIANT_DEPTH=60`, 30,720 calls per invariant
 
 ### Static analysis: Slither 0.11.6
 Run: `slither . --filter-paths "lib/|test/" --exclude-dependencies`

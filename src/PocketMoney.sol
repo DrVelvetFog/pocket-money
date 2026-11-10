@@ -22,6 +22,7 @@ contract PocketMoney is AbstractReactive {
 
     uint256 internal constant TRANSFER_TOPIC = uint256(keccak256("Transfer(address,address,uint256)"));
     uint256 internal constant PANIC_TOPIC = uint256(keccak256("Panic(address)"));
+    uint256 internal constant RAISE_TOPIC = uint256(keccak256("RaiseApproved(address,uint256,address)"));
     uint256 internal constant FOREIGN_TOPIC = uint256(keccak256("ForeignSpend(address,bytes32,uint256,bytes32,bytes32)"));
     uint256 internal constant SYNC_TOPIC = uint256(keccak256("SyncRequested(address)"));
     /// @dev Cron10000 (~3h) from the system's legacy cron emitter, per dev.reactive.network.
@@ -76,6 +77,7 @@ contract PocketMoney is AbstractReactive {
     event AgentSet(address indexed agent, uint256 allowance);
     event PayeeSet(bytes32 indexed payee, bool approved);
     event CeilingSet(uint256 ceiling);
+    event RaiseGranted(address indexed agent, uint256 indexed chainId, uint256 amount, uint256 txHash);
     event RebalancePolicySet(uint256 lowWater, uint256 target, uint256 maxFee);
     event CronSet(bool on);
     event CallbackGasSet(uint256 indexed chainId, uint64 gasLimit);
@@ -103,6 +105,9 @@ contract PocketMoney is AbstractReactive {
     mapping(uint256 => uint64) public seqOf;
     mapping(uint256 => uint64) public callbackGasOf;
     mapping(uint256 => address) public inboxOf;
+    /// @dev One-day raises the owner approves from any chain; cleared at the daily rollover.
+    mapping(address => uint256) public extraToday;
+    uint256 public householdExtraToday;
 
     mapping(uint256 => uint256) public vaultBalanceOf;
     mapping(uint256 => bool) public rebalancing;
@@ -130,6 +135,7 @@ contract PocketMoney is AbstractReactive {
         if (t == TRANSFER_TOPIC) _onTransfer(log_);
         else if (t == FOREIGN_TOPIC) _onForeign(log_);
         else if (t == PANIC_TOPIC) _onPanic(log_);
+        else if (t == RAISE_TOPIC) _onRaise(log_);
         else if (t == SYNC_TOPIC && log_.contractAddress == address(this)) _onSyncRequest(address(uint160(log_.topic1)));
         // CRON_TOPIC needs nothing beyond _roll(). Unknown logs fall through at no extra cost.
     }
@@ -190,7 +196,8 @@ contract PocketMoney is AbstractReactive {
 
     function _topUp(address agentAddr, uint256 chainId, address vault, uint256 amount) internal {
         Agent storage a = agents[agentAddr];
-        uint256 refill = _min(_min(amount, _left(a.allowance, a.toppedUpToday)), _left(ceiling, toppedUpToday));
+        uint256 refill =
+            _min(_min(amount, _left(_allowanceOf(agentAddr), a.toppedUpToday)), _left(_ceiling(), toppedUpToday));
         if (refill == 0) return;
         a.toppedUpToday += refill;
         toppedUpToday += refill;
@@ -203,22 +210,25 @@ contract PocketMoney is AbstractReactive {
         );
     }
 
-    /// @dev Push one agent's budget to every vault (newer versions win there).
+    /// @dev Push one agent's budget to every vault (newer versions win there). Same field order as
+    /// Vault.Mirror.
     function _sync(address agentAddr) internal {
         Agent storage a = agents[agentAddr];
         uint64 v = ++syncVersion;
-        uint256 dayEnds = dayStart + 1 days;
-        emit Synced(agentAddr, v, _left(a.allowance, a.spentToday), _left(ceiling, spentToday));
+        uint256 extra = extraToday[agentAddr];
+        emit Synced(agentAddr, v, _left(a.allowance + extra, a.spentToday), _left(_ceiling(), spentToday));
         _toAllVaults(
             abi.encodeWithSignature(
-                "syncBudget(address,address,uint256,uint256,uint256,uint256,uint256,uint64)",
+                "syncBudget(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint64)",
                 address(0),
                 agentAddr,
                 a.allowance,
+                extra,
                 a.spentToday,
                 ceiling,
+                householdExtraToday,
                 spentToday,
-                dayEnds,
+                dayStart + 1 days,
                 v
             )
         );
@@ -238,6 +248,27 @@ contract PocketMoney is AbstractReactive {
         panicked = true;
         emit PanicSeen(log_.chainId, address(uint160(log_.topic1)), log_.txHash);
         _toAllVaults(abi.encodeWithSignature("freeze(address,bytes32)", address(0), bytes32("panic")));
+    }
+
+    /// @dev The owner approved a one-day raise on some chain's vault: lift that agent's allowance
+    /// and the household ceiling for today, and re-sync every mirror so facilitators see it.
+    function _onRaise(LogRecord calldata log_) internal {
+        if (log_.contractAddress != chains[log_.chainId].vault) return;
+        address agentAddr = address(uint160(log_.topic1));
+        if (!agents[agentAddr].known) return;
+        (uint256 amount,) = abi.decode(log_.data, (uint256, address));
+        extraToday[agentAddr] += amount;
+        householdExtraToday += amount;
+        emit RaiseGranted(agentAddr, log_.chainId, amount, log_.txHash);
+        _onSyncRequest(address(0)); // the household cap moved for everyone
+    }
+
+    function _allowanceOf(address agentAddr) internal view returns (uint256) {
+        return agents[agentAddr].allowance + extraToday[agentAddr];
+    }
+
+    function _ceiling() internal view returns (uint256) {
+        return ceiling + householdExtraToday;
     }
 
     // ---- liquidity ----
@@ -314,12 +345,14 @@ contract PocketMoney is AbstractReactive {
             emit AgentStatement(day, agentList[i], a.spentToday, a.toppedUpToday);
             a.spentToday = 0;
             a.toppedUpToday = 0;
+            extraToday[agentList[i]] = 0;
         }
         uint256 elapsed = (block.timestamp - dayStart) / 1 days;
         dayStart += elapsed * 1 days;
         day += elapsed;
         spentToday = 0;
         toppedUpToday = 0;
+        householdExtraToday = 0;
     }
 
     function _left(uint256 cap, uint256 used) internal pure returns (uint256) {
@@ -348,6 +381,7 @@ contract PocketMoney is AbstractReactive {
         _watch(chainId, usdc, uint256(uint160(vault)), REACTIVE_IGNORE);
         _watch(chainId, usdc, REACTIVE_IGNORE, uint256(uint160(vault)));
         SYSTEM.subscribe(chainId, vault, PANIC_TOPIC, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+        SYSTEM.subscribe(chainId, vault, RAISE_TOPIC, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
         emit ChainAdded(chainId, usdc, vault, domain);
     }
 

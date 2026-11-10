@@ -89,8 +89,19 @@ contract Handler is ReactiveSim {
         address a = agentsArr[agentSeed % 2];
         uint256 amt = bound(amountSeed, 0, 20e6);
         _newDayCheck();
-        if (amt > maxAllowanceToday[a]) maxAllowanceToday[a] = amt;
+        uint256 withRaise = amt + pm.extraToday(a);
+        if (withRaise > maxAllowanceToday[a]) maxAllowanceToday[a] = withRaise;
         pm.setAgent(a, amt);
+        _pump();
+        _relay();
+    }
+
+    function raise(uint256 agentSeed, uint256 chainSeed, uint256 amountSeed) external {
+        address a = agentsArr[agentSeed % 2];
+        uint256 amt = bound(amountSeed, 0, 5e6);
+        _newDayCheck();
+        maxAllowanceToday[a] += amt;
+        vault[ids[chainSeed % ids.length]].approveRaise(a, amt);
         _pump();
         _relay();
     }
@@ -105,8 +116,9 @@ contract Handler is ReactiveSim {
             allowanceDay = pm.day() + (block.timestamp >= pm.dayStart() + 1 days ? 1 : 0);
             (,, uint256 aa,,) = pm.agents(andy);
             (,, uint256 pa,,) = pm.agents(plummy);
-            maxAllowanceToday[andy] = aa;
-            maxAllowanceToday[plummy] = pa;
+            bool rolls = block.timestamp >= pm.dayStart() + 1 days;
+            maxAllowanceToday[andy] = aa + (rolls ? 0 : pm.extraToday(andy));
+            maxAllowanceToday[plummy] = pa + (rolls ? 0 : pm.extraToday(plummy));
         }
     }
 
@@ -128,12 +140,13 @@ contract PocketMoneyInvariants is StdInvariant, Test {
     function setUp() public {
         h = new Handler();
         targetContract(address(h));
-        bytes4[] memory sel = new bytes4[](5);
+        bytes4[] memory sel = new bytes4[](6);
         sel[0] = Handler.spend.selector;
         sel[1] = Handler.suiSpend.selector;
         sel[2] = Handler.panic.selector;
         sel[3] = Handler.setAllowance.selector;
         sel[4] = Handler.warp.selector;
+        sel[5] = Handler.raise.selector;
         targetSelector(FuzzSelector({ addr: address(h), selectors: sel }));
     }
 
@@ -151,7 +164,7 @@ contract PocketMoneyInvariants is StdInvariant, Test {
     /// P2: top-ups never exceed the household ceiling (or an agent's allowance) in a day.
     function invariant_P2_topUpsWithinCeilingAndAllowance() public view {
         PocketMoney pm = h.guard();
-        assertLe(pm.toppedUpToday(), pm.ceiling());
+        assertLe(pm.toppedUpToday(), pm.ceiling() + pm.householdExtraToday());
         address[2] memory ag = h.agents();
         for (uint256 j; j < 2; ++j) {
             (,,,, uint256 topped) = pm.agents(ag[j]);
@@ -191,9 +204,11 @@ contract PocketMoneyInvariants is StdInvariant, Test {
         uint256[] memory ids = h.chainIds();
         address[2] memory ag = h.agents();
         bool newDay = block.timestamp >= pm.dayStart() + 1 days;
-        uint256 hLeft = newDay ? pm.ceiling() : _left(pm.ceiling(), pm.spentToday());
+        uint256 cap = pm.ceiling() + (newDay ? 0 : pm.householdExtraToday());
+        uint256 hLeft = newDay ? cap : _left(cap, pm.spentToday());
         for (uint256 j; j < 2; ++j) {
             (,, uint256 allowance, uint256 spent,) = pm.agents(ag[j]);
+            if (!newDay) allowance += pm.extraToday(ag[j]);
             uint256 aLeft = newDay ? allowance : _left(allowance, spent);
             uint256 expected = aLeft < hLeft ? aLeft : hLeft;
             for (uint256 i; i < ids.length; ++i) assertEq(h.vaultOf(ids[i]).spendLeft(ag[j]), expected);
