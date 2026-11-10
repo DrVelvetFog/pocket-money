@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@mysten/sui": "2.39.1",
+    "@solana-program/token": "0.18.0",
+    "@solana/kit": "8.6.0",
     "@x402/core": "2.30.0",
     "@x402/evm": "2.30.0",
     "@x402/express": "2.30.0",
