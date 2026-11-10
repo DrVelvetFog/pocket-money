@@ -1,0 +1,23 @@
+{
+  "name": "pocket-money-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seller": "tsx src/seller.ts",
+    "agent": "tsx src/agent.ts"
+  },
+  "dependencies": {
+    "@x402/core": "2.30.0",
+    "@x402/evm": "2.30.0",
+    "@x402/express": "2.30.0",
+    "@x402/fetch": "2.30.0",
+    "express": "5.3.0",
+    "viem": "2.57.17"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.6",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
