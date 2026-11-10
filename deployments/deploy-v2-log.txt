@@ -1,0 +1,65 @@
+pm-owner keystore password: 
+
+== 0 wind down v1 (recover lREACT and the Base vault's funds)
+   tx 0x91aadfb86aa3262cd2d850500bb65533e002c6362c8967099a6d37d1ec614f01 status 0x1
+   tx 0x005829db913add745397c72d56c66badfd1807bcc840af37db95e95d7aa363c1 status 0x1
+   tx 0x715ad503d15fa60a4cc7242de8c8a685da4bfe624bac3c2a5e7cab785a6f6350 status 0x1
+
+== 1 deploy PocketMoney v2 on Lasna
+   PocketMoney 0xB66459cE2711987c07048ac9570fcBC8AEC73820
+
+== 2 vault on chain 84532
+   Vault 0xd89544bc7054229E1F3e34E8C8DF1c84697E682e
+   tx 0x844f7177a10d5c9da32ea541128c5df658c8cf980c805e114941a74b2d2c22e5 status 0x1
+   tx 0x6b5862c0901a89f5372d9acfb2ffd6b1ba0355ed80a42033c4330cb8272df6ba status 0x1
+   tx 0x7b0ef0c1328a12e5dd6b2830dfd15f9cf1123179dc885fe40bac35e11aa76cc9 status 0x1
+
+== 3 register chain 84532 on the guard
+   tx 0x9672a74a0d48a0f48b82bbcd42976c0a0a2be883bee47e392e3a78ec403dd15b status 0x1
+
+== 2 vault on chain 1301
+   Vault 0x2f48C06CfEA23Bc3Ec702691d0d3AF01a06AA4CD
+   tx 0x632de40de86572dab44d11fd9e080b5ce650fabbbb82cbfbdc0aaaca4107783a status 0x1
+Error: server returned an error response: error code -32000: nonce too low: next nonce 2, tx nonce 1
+pm-owner keystore password: 
+
+== resuming with PocketMoney 0xB66459cE2711987c07048ac9570fcBC8AEC73820
+
+== 2 vault on chain 84532
+   Vault 0xd89544bc7054229E1F3e34E8C8DF1c84697E682e
+
+== 3 register chain 84532 on the guard
+
+== 2 vault on chain 1301
+   Vault 0x2f48C06CfEA23Bc3Ec702691d0d3AF01a06AA4CD
+   tx 0xaad1db5d2d063a830ee684ab29b9bf1894aa662331244f0ba1329a9b8bdf6ad7 status 0x1
+   (stale nonce, retrying)
+   tx 0xc6977ae5be4d81264de61a6218bf7c2020f63f2f296bc8e0481f199b03948909 status 0x1
+   (stale nonce, retrying)
+   tx 0x62c5439ca61b88afe0cd62fe84127bff3c9398c4ffdac41bc569438ea8e06980 status 0x1
+
+== 3 register chain 1301 on the guard
+   tx 0xc1c66beff02e56fce5f100baf74355b8a4fe5d3fb26887afe5ebd45c93a20e96 status 0x1
+
+== 2 vault on chain 11155111
+   Vault 0x5EB89Db6f0AAf259326A7Fb2d16E8FdcCc4B77fb
+   tx 0xd21f164d9fb3536574c5e9dcf4df387f0764e32b911665e090538c35a7bdbea6 status 0x1
+   tx 0xf93f109a840aa1b7496f6566812285bc6088fbc399afada23a1532e86c06ae30 status 0x1
+   tx 0x3bbf8431497d2a5bcdebabd2b4c9425e55619c722ff7812bb9d51cd4aff29bf4 status 0x1
+   tx 0xb5228914a5c1406ce80d76fe892f3fffd54adf8509d66cfa4c98ea63809728c3 status 0x1
+
+== 3 register chain 11155111 on the guard
+   tx 0x994f52242c78c2a578e3e4edc594e134f16283306a08c4281509f182c3ce5319 status 0x1
+
+== 4 household: agent allowance, ceiling, payee
+   tx 0x89f4583057f0190ec722882a68598943ed038a5bd57ed971745f5b0d8bb3db4d status 0x1
+   tx 0x16b653442a2cf23c827700eb2e6638605ea2bafb50be0c97b51ef85226c1e5b9 status 0x1
+
+Deployed. Saved to deployments/testnet.env
+OWNER=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+AGENT=0x7Cd681561d75805156568ccF6D8f1Cf0536da06b
+PAYEE=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+PM=0xB66459cE2711987c07048ac9570fcBC8AEC73820
+VAULT_84532=0xd89544bc7054229E1F3e34E8C8DF1c84697E682e
+VAULT_1301=0x2f48C06CfEA23Bc3Ec702691d0d3AF01a06AA4CD
+VAULT_11155111=0x5EB89Db6f0AAf259326A7Fb2d16E8FdcCc4B77fb

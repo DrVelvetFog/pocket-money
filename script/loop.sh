@@ -47,7 +47,7 @@ case $mode in
     amount=${3:-250000}
     to=$([[ $mode == spend ]] && echo ${4:-$PAYEE} || echo $STRAY)
     echo "agent pays $amount on $(name $c) to $to"
-    o=$(cast send $(usdc $c) "transfer(address,uint256)" $to $amount --rpc-url $(rpc $c) --account pm-agent --json)
+    o=$(cast send $(usdc $c) "transfer(address,uint256)" $to $amount --rpc-url $(rpc $c) --account pm-agent ${PM_AGENT_PW_FILE:+--password-file $PM_AGENT_PW_FILE} --json)
     echo "origin    $(jq -r .transactionHash <<<"$o")  block $(jq -r .blockNumber <<<"$o" | cast to-dec)  ($(name $c))"
     read -r tx _ <<<"$(wait_log $LASNA $lasna_from $PM 'Spent(address indexed,uint256 indexed,address indexed,uint256,uint256,uint256,bytes32)')"
     echo "reactive  $tx  (Lasna)"
@@ -65,7 +65,7 @@ case $mode in
     ;;
   panic)
     echo "owner presses panic on $(name $c)"
-    o=$(cast send $(vault $c) "panic()" --rpc-url $(rpc $c) --account pm-owner --json)
+    o=$(cast send $(vault $c) "panic()" --rpc-url $(rpc $c) --account pm-owner ${PM_OWNER_PW_FILE:+--password-file $PM_OWNER_PW_FILE} --json)
     EXCL=$(jq -r .transactionHash <<<"$o")
     echo "panic     $EXCL  ($(name $c))"
     read -r tx _ <<<"$(wait_log $LASNA $lasna_from $PM 'PanicSeen(uint256 indexed,address indexed,uint256)')"
