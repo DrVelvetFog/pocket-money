@@ -2,5 +2,6 @@ relayer 0xB8232D5437Aa124c235c8321dec2d1003863cB65 watching Base Sepolia, Unicha
 Unichain Sepolia: Invalid parameters were provided to the RPC method.
 Unichain Sepolia: Invalid parameters were provided to the RPC method.
 Unichain Sepolia: Invalid parameters were provided to the RPC method.
-burn on Ethereum Sepolia: 0xcadbf6b4d7425d20e3caa295cae40773a27e030e244a561c02e95a124d90c106 -> domain 6, 1100000 units
-mint on Base Sepolia: 0x84e554c7c892e29a9268f94c687efdee1c73ea0281c81fac75d63c9538384de6 (success), attested after 20s
+burn on Ethereum Sepolia: 0x3372fdaa5bda562ff53d429d5303af97be8df14d7f695740bed6b26223315e25 -> domain 6, 1100000 units
+mint on Base Sepolia: 0x7853c03da337e369689ab04f2dd5f595001363cb0aed325916c0109a1906736d (success), attested after 17s
+Unichain Sepolia: Invalid parameters were provided to the RPC method.

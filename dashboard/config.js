@@ -2,8 +2,8 @@
 window.PM_CONFIG = {
   lasna: "https://lasna-rpc.rnk.dev/",
   explorer: "https://lasna.reactscan.net",
-  guard: "0x77BE935e39274963E18E32567e980387aAAae6b8",
-  fromBlock: 8004107,
+  guard: "0x5Bc6C4F0dC05B47413AD86EE39C632E408677A5A",
+  fromBlock: 8015521,
   agent: "0x7Cd681561d75805156568ccF6D8f1Cf0536da06b",
   agentName: "Andy",
   liveStart: "2026-11-23",
@@ -14,8 +14,8 @@ window.PM_CONFIG = {
     "0x8d6548338301e8d2c785828cb219f8e9e7dc66c491b70145a16e90f4748bfeea": "the shop on Solana"
   },
   chains: [
-    { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "0xeceCBacAb0429915459E2874100b994E8dC3d222", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },
-    { id: 1301, name: "Unichain Sepolia", rpc: "https://sepolia.unichain.org", vault: "0x614EB7577B127870F8c2223deE869E9a799e78CC", usdc: "0x31d0220469e10c4E71834a79b1f276d740d3768F", tx: "https://sepolia.uniscan.xyz/tx/" },
-    { id: 11155111, name: "Ethereum Sepolia", rpc: "https://ethereum-sepolia-rpc.publicnode.com", vault: "0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172", usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", tx: "https://sepolia.etherscan.io/tx/" }
+    { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },
+    { id: 1301, name: "Unichain Sepolia", rpc: "https://sepolia.unichain.org", vault: "0x9408E947d6654417BAcF45548070A0453690AdA3", usdc: "0x31d0220469e10c4E71834a79b1f276d740d3768F", tx: "https://sepolia.uniscan.xyz/tx/" },
+    { id: 11155111, name: "Ethereum Sepolia", rpc: "https://ethereum-sepolia-rpc.publicnode.com", vault: "0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d", usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", tx: "https://sepolia.etherscan.io/tx/" }
   ]
 };

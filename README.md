@@ -133,7 +133,7 @@ TAMPER=1 script/verify.sh
 Read the mirror on any chain (here, Unichain Sepolia):
 
 ```bash
-cast call 0x614EB7577B127870F8c2223deE869E9a799e78CC "canSpend(address,uint256)(bool,uint256,bytes32)" 0x7Cd681561d75805156568ccF6D8f1Cf0536da06b 100000 --rpc-url https://sepolia.unichain.org
+cast call 0x9408E947d6654417BAcF45548070A0453690AdA3 "canSpend(address,uint256)(bool,uint256,bytes32)" 0x7Cd681561d75805156568ccF6D8f1Cf0536da06b 100000 --rpc-url https://sepolia.unichain.org
 ```
 
 **The dashboard** ([`dashboard/`](dashboard)) is a static page that reads the same chains directly:
@@ -146,11 +146,11 @@ python3 -m http.server 4173 --directory dashboard
 
 | | Address |
 |---|---|
-| Guard · Reactive Lasna | `0x77BE935e39274963E18E32567e980387aAAae6b8` |
-| Vault · Base Sepolia | `0xeceCBacAb0429915459E2874100b994E8dC3d222` |
-| Vault · Unichain Sepolia | `0x614EB7577B127870F8c2223deE869E9a799e78CC` |
-| Vault · Ethereum Sepolia | `0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172` |
-| SpendInbox · Base Sepolia | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
+| Guard · Reactive Lasna | `0x5Bc6C4F0dC05B47413AD86EE39C632E408677A5A` |
+| Vault · Base Sepolia | `0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5` |
+| Vault · Unichain Sepolia | `0x9408E947d6654417BAcF45548070A0453690AdA3` |
+| Vault · Ethereum Sepolia | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
+| SpendInbox · Base Sepolia | `0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6` |
 
 Earlier versions were retired on-chain with the vaults' logged `migrate()`, so their history stays visible.
 

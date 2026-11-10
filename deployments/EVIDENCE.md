@@ -71,7 +71,7 @@ Full output: `deployments/week2-loops-log.txt`.
 
 ## Week 2, v3: gas fix live, every loop passes on all three chains (2026-11-10)
 
-**Contracts (current)**
+**Contracts (v3, since retired)**
 
 | | Address |
 |---|---|
@@ -144,7 +144,7 @@ The owner moved $0.10 USDC from Base Sepolia (domain 6) to Unichain Sepolia (dom
 
 ## v4: budget mirror, refusal before settling, and a CCTP refill, all live (2026-11-10)
 
-**Contracts (current)**
+**Contracts (v4, since retired)**
 
 | | Address |
 |---|---|
@@ -218,7 +218,7 @@ Log: `deployments/sui-demo-log.txt`.
 
 ## v5: ask for a raise, approved from any chain (2026-11-10)
 
-**Contracts (current)**
+**Contracts (v5, since retired)**
 
 | | Address |
 |---|---|
@@ -292,3 +292,41 @@ It then rebuilds every receipt hash.
 - The seller and relayer stopped after each run.
 
 Records: `deployments/daily/2026-11-10-run1.json`, `deployments/daily/2026-11-10-run2-bare-env.json`.
+
+## v6: a repeated callback can't burn twice; redeployed and re-proven (2026-11-10)
+
+**Why.** Reactive can deliver one requested callback twice. A new test makes the simulator do that for every callback. Top-ups, mirror syncs and freezes were already safe to repeat; a repeated rebalance would have sent a second CCTP transfer. The guard now numbers each rebalance per donor chain, and the vault declines any number it has already seen. Details: `SECURITY.md`, bug 3. Commit `a90ea1fb`.
+
+**Retiring v5.** The three vaults `migrate()`d to the owner, and the guard returned its lREACT:
+- `0xb5c4f069…7ecd`, `0x9abd83fb…eda8`, `0xc5038a1c…e4a0`, `0xed41501f…2dc6`
+- The first redeploy then stopped: deploying the guard needed about 0.5 lREACT of gas on top of its 1.7 fund. Rerun with a 1.0 lREACT fund.
+
+**Contracts (current)**
+
+| | Address |
+|---|---|
+| Guard (Lasna) | `0x5Bc6C4F0dC05B47413AD86EE39C632E408677A5A` |
+| Vault, Base Sepolia | `0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5` |
+| Vault, Unichain Sepolia | `0x9408E947d6654417BAcF45548070A0453690AdA3` |
+| Vault, Ethereum Sepolia | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
+| SpendInbox (Base Sepolia) | `0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6` |
+
+**The v4 demo, rerun on v6:**
+- **Mirror:** the allowance was set to $0.30 (`0x7edcabdb…24ae`). Base and Unichain read it right away; Ethereum Sepolia lagged a block, as before.
+- **Refill:** three x402 purchases on Base settled: `0x5a74911c…2995`, `0xc32ab2b9…b43e`, `0xdccd1f39…8ffc`. The Base vault fell to $2.90.
+
+| Step | Where | Tx |
+|---|---|---|
+| guard requests a refill (rebalance #1 from Ethereum Sepolia) | Lasna | `0xc1c90814…f277` |
+| Ethereum Sepolia vault burns (CCTP v2 fast) | Ethereum Sepolia | `0x3372fdaa…5e25` |
+| relayer mints on Base (attested after 17 s) | Base Sepolia | `0x7853c03d…736d` |
+| guard sees the mint land | Lasna | `0x07d3f38d…b61d` |
+
+- **Result:** Base vault $2.90 → $3.99989. The Ethereum Sepolia vault's `lastRebalanceSeq()` reads 1.
+- **Refused before settling:** a 4th purchase on Unichain got `402 pocket_money_over_budget`. The agent's Unichain USDC stayed at 1000000.
+- **Reset:** `0x4f43003e…ae44`.
+- **Receipts:** `script/verify.sh` VERIFIED 3 receipts; the rebuilt head matches the guard (`0xa1948266…546b`).
+
+**Cost:** the redeploy, setup and demo took the new guard from 1.0 to 0.77 lREACT.
+
+Logs: `deployments/deploy-20261110-103005.log`, `deployments/v4-demo-20261110-103509.log`.

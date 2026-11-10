@@ -1,0 +1,65 @@
+pm-owner keystore password: 
+
+== 1 deploy PocketMoney on Lasna
+   PocketMoney 0x5Bc6C4F0dC05B47413AD86EE39C632E408677A5A
+
+== 2 vault on chain 84532
+   Vault 0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5
+   tx 0xcd056f12d68a957e6f6d1dc4b66fff50c934f984d3a80908039f5945a67b60e4 status 0x1
+   tx 0x30f6c4df91475ae2bd9d0ba161080b944a1b24718a4c0f5c3d6dfc1de286db60 status 0x1
+
+== 3 register chain 84532 on the guard
+   tx 0x9c4f0143445c32726ec37456cc724fd381ba4139839e1111c8a318115e2d2f81 status 0x1
+   tx 0xade3af08de5005fe726f2d5a887931d9c3050620ee5b2774fc45998b0f361bcf status 0x1
+
+== 2 vault on chain 1301
+   Vault 0x9408E947d6654417BAcF45548070A0453690AdA3
+   tx 0x8fe0cd8a401caf865b4106118c82b44ac99e98d0e15c9667f6454d03086af42e status 0x1
+   (stale nonce, retrying)
+   tx 0x57040ffed4213db6d175f9300361de314ed44895149aa0a5a43785ef15bce254 status 0x1
+
+== 3 register chain 1301 on the guard
+   tx 0x5938feaa5b012fc8c19e5e6dd4557bafc34a9788b81c4b53953c0dbf4eb46e32 status 0x1
+   tx 0x3eda0264e9faaae6427da99f845d20d087fa23f26705eed859b166c9d239e83c status 0x1
+
+== 2 vault on chain 11155111
+   Vault 0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d
+   tx 0x0d3e7f693aaa7f6891e584dd6abad33d37eeaf187e7308b6623c4f44064fdd89 status 0x1
+   tx 0xb7da5eea1214f977400a3435da5163b5f9c56303a4a5a9ff55ef19590306d5b0 status 0x1
+
+== 3 register chain 11155111 on the guard
+   tx 0x651365a2657b38cc50106469fdecf9088114bc75da2a9b0238bc74eebadb7054 status 0x1
+   tx 0x04bf6673c8c8246bc44db41e9eaddaac217b511583eca878520db0e7acdb4a42 status 0x1
+
+== 3b CCTP: every vault may send to its siblings, up to the cap
+   tx 0xb4948ee944fd34120afdb5971acfa250e477ffd60e22de06634e2d448af6fa60 status 0x1
+   tx 0x70d6335c5f51d30a69f710ad2dcea64236c5754d07da4c33635b8e73268f6df9 status 0x1
+   tx 0x7337325df9c5e7903e02088724285a155d21986399ad7dea2dc1b54424442b07 status 0x1
+   tx 0xddbd77c2a6dea8ebe904c446b0c12a702cab8f6c76839d04593715d1a23c10a8 status 0x1
+   tx 0xea013c431de2446fcb4347b54f2b1209c01f95231d2a12da9cda61794cb58b32 status 0x1
+   tx 0x5d65755ebc1be3ce7801cd88e5583b10349af38ecb3b22c5136b982422aaeba4 status 0x1
+   tx 0xd7aea3fe556bdcd83f96bc988a888368cd50564e71675849602ad50e48102e84 status 0x1
+   tx 0x04fac82b80b8a276db06e9fe494c4d6fb42af41b46b9a15f94d213a15fa3ebb8 status 0x1
+   tx 0xc4a82ef264100e86f340190bb988feaf0d5fb7bfdc1f4569ca8829e6ff30bc0e status 0x1
+   tx 0xd24558ff5cb952ad8aa35cc63674d87d05649c121569ad31bdeb40bfeda3091b status 0x1
+
+== 3c Sui spend inbox on Base Sepolia (attester = the seller's service key)
+   SpendInbox 0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6
+   tx 0x051d939c7b343bdf7967b747ece7237b7ea365876581578a94d6cc0192145803 status 0x1
+
+== 4 household: payees, then the agent (which pushes its budget mirror to every vault)
+   tx 0x412bad3f7e49f3dbda95253cebe2ba71eedca423f4e5af250a645aa64b2e5cd6 status 0x1
+   tx 0xd51e8c7f97f94771af1adc4a773902fbd213b6905c3cd18fdeda7ea31067c373 status 0x1
+   tx 0xcfe212e14231155be5e3cd408076d42600023665524787e66cc06db009a944f1 status 0x1
+   tx 0x7894df1121f50245d5191a782a90157ec034d3a1b50f39502b28c54f5b0c02d3 status 0x1
+   tx 0xc15570f61674b567f90c2b8e802984e85f97248dbe7c355c282992483ea92409 status 0x1
+
+Deployed. Saved to deployments/testnet.env
+OWNER=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+AGENT=0x7Cd681561d75805156568ccF6D8f1Cf0536da06b
+PAYEE=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+PM=0x5Bc6C4F0dC05B47413AD86EE39C632E408677A5A
+VAULT_84532=0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5
+VAULT_1301=0x9408E947d6654417BAcF45548070A0453690AdA3
+VAULT_11155111=0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d
+INBOX=0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6

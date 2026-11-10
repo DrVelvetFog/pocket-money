@@ -1,0 +1,10 @@
+pm-owner keystore password: 
+
+== 0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)
+   tx 0xb5c4f0694047c45938551ea6cd5e4a83c43d725bfc41cabdd1a2a88e9aa57ecd status 0x1
+   tx 0x9abd83fb0c06a45aceed88ad328cb02795c31758b35af25675d31292dd5beda8 status 0x1
+   tx 0xc5038a1c24f7926a96ca7caa5584063dd5955ec6b0ce098457ff615658e3e4a0 status 0x1
+   tx 0xed41501f55453b02069389c53e4172b6f0de28e3752a141440e8c38c47452dc6 status 0x1
+
+== 1 deploy PocketMoney on Lasna
+Error: server returned an error response: error code -32003: insufficient funds for gas * price + value: balance 2152418599985647605, tx cost 2196668973363555590, overshot 44250373377907985, data: {"code":"ErrUpstreamRequest","message":"failed to make request to upstream","details":{"hedges":0,"upstreamId":"lasna-omni-node-1-archive","durationMs":35,"networkId":"evm:5318007","method":"eth_sendRawTransaction","attempts":1,"retries":0},"cause":{"code":"ErrEndpointExecutionException","message":"execution exception on node","details":{"retryableTowardNetwork":false},"cause":{"code":"ErrJsonRpcExceptionInternal","message":"insufficient funds for gas * price + value: balance 2152418599985647605, tx cost 2196668973363555590, overshot 44250373377907985","details":{"statusCode":200,"headers":{"content-type":"application/json","date":"Tue, 10 Nov 2026 16:29:18 GMT","content-length":"177"},"originalCode":-32000,"normalizedCode":-32003}}}}
