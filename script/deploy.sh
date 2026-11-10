@@ -145,6 +145,7 @@ echo "   SpendInbox $INBOX"
 step "4 household: payees, then the agent (which pushes its budget mirror to every vault)"
 send $PM "setPayee(address,bool)" $PAYEE true --rpc-url $LASNA
 send $PM "setPayee(address,bool)" $SELLER true --rpc-url $LASNA
+[[ -n "${SUI_SHOP:-}" ]] && send $PM "setForeignPayee(bytes32,bool)" $SUI_SHOP true --rpc-url $LASNA
 send $PM "setAgent(address,uint256)" $AGENT $ALLOWANCE --rpc-url $LASNA
 
 echo; echo "Deployed. Saved to $OUT"; cat $OUT
