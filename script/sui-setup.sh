@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 source script/lib.sh
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
 
-export AGENT_SUI_PK=$(key pm-agent-sui)
-export SELLER_PK=$(key pm-seller)
+AGENT_SUI_PK=$(key pm-agent-sui); export AGENT_SUI_PK
+SELLER_PK=$(key pm-seller); export SELLER_PK
 out=$(cd agent && npx tsx src/sui-setup.ts --faucet)
 echo "$out"
 AGENT_SUI=$(grep '^AGENT_SUI=' <<<"$out" | cut -d= -f2); SUI_SHOP=$(grep '^SUI_SHOP=' <<<"$out" | cut -d= -f2)

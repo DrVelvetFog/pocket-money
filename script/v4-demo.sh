@@ -25,8 +25,8 @@ key() {
   [[ -n "$k" ]] || { echo "could not decrypt $1 (wrong password?)" >&2; exit 1; }
   printf '%s' "$k"
 }
-export SELLER_PK=$(key pm-seller pm-seller)
-export AGENT_PK=$(key pm-agent pm-agent)
+SELLER_PK=$(key pm-seller pm-seller); export SELLER_PK
+AGENT_PK=$(key pm-agent pm-agent); export AGENT_PK
 export RELAYER_PK=$SELLER_PK
 d=$(mktemp -d); chmod 700 "$d"
 read -rs -p "pm-owner keystore password: " p </dev/tty; echo; printf '%s' "$p" > "$d/o"; unset p; chmod 600 "$d/o"

@@ -10,8 +10,8 @@ cd "$(dirname "$0")/.."
 source script/lib.sh
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
 
-export AGENT_SUI_PK=$(key pm-agent-sui)
-export SELLER_PK=$(key pm-seller)
+AGENT_SUI_PK=$(key pm-agent-sui); export AGENT_SUI_PK
+SELLER_PK=$(key pm-seller); export SELLER_PK
 owner_init
 (cd agent && npx tsx src/sui-attester.ts >../deployments/attester.log 2>&1) &
 trap 'rm -rf "$OWNER_PW_DIR"; pkill -f "tsx src/sui-attester.ts" 2>/dev/null; true' EXIT

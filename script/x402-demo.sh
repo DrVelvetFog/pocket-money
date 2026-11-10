@@ -27,8 +27,8 @@ key() { # key <keystore name> <prompt>  -> private key on stdout (captured, neve
   [[ -n "$k" ]] || { echo "could not decrypt $1 (wrong password?)" >&2; exit 1; }
   printf '%s' "$k"
 }
-export SELLER_PK=$(key pm-seller pm-seller)
-export AGENT_PK=$(key pm-agent pm-agent)
+SELLER_PK=$(key pm-seller pm-seller); export SELLER_PK
+AGENT_PK=$(key pm-agent pm-agent); export AGENT_PK
 
 (cd agent && PORT=$PORT npx tsx src/seller.ts >../deployments/seller.log 2>&1) &
 SELLER_JOB=$!
