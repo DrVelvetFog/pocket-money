@@ -178,3 +178,40 @@ The owner moved $0.10 USDC from Base Sepolia (domain 6) to Unichain Sepolia (dom
 **Reset:** `0x887229b4…194a`. Every vault now reports $2.70 left (the $3 allowance minus the $0.30 spent today).
 
 Logs: `deployments/v4-demo-log.txt`, `deployments/deploy-v4-log.txt`.
+
+## v4: Sui spending counts against the same budget (2026-11-10)
+
+Reactive can't watch Sui. A trusted attester (`agent/src/sui-attester.ts`, using the seller's service key) follows the agent's Sui testnet transactions over Sui GraphQL, because public fullnodes retired JSON-RPC. It reads the *net USDC balance changes* and reports each payment once to the SpendInbox on Base Sepolia.
+
+- Agent on Sui: `0xf2a997b8…c75f`
+- Shop (the seller's Sui identity, an approved payee): `0x2a316b4e…ff33`
+
+**1. The agent paid the shop $0.10 on Sui.**
+
+| Step | Where | Tx |
+|---|---|---|
+| USDC payment | Sui testnet | `2RW6ZSAnq9gKzvCssRBCAUiWFLYze9yzPsKk5cQmm8wF` |
+| attester reports it (ForeignSpend) | Base Sepolia inbox | `0xf0952750…78a0` |
+| guard books it | Lasna | `0x6125ff7b…7928` |
+
+The budget mirror dropped on every EVM chain: $2.70 → $2.60, then $2.59 after drill 2. All three vaults reached sync version 8 (Ethereum Sepolia caught up a block later).
+
+**2. The agent paid $0.01 to an unknown Sui address (`0x…dead`).**
+
+| Step | Where | Tx |
+|---|---|---|
+| USDC payment | Sui testnet | `CLgZAEKncRGmxwNMuqmXZXDYCJjbkhVfy2j8wMKqRCHm` |
+| attester reports it | Base Sepolia inbox | `0x847aa54c…f116` |
+| guard quarantines the agent | Lasna | `0x5c86e188…ed2a` |
+| `AgentFrozen` | Base Sepolia | `0x34aa8c17…3ade` |
+| `AgentFrozen` | Unichain Sepolia | `0xf63f19ea…4288` |
+| `AgentFrozen` | Ethereum Sepolia | `0xbf46c7ff…cdbe` |
+
+**Reset:** `resumeAgent` + `unfreezeAgent` on each vault. Checked on-chain: not quarantined, unfrozen on all three chains.
+
+**Limits, stated:**
+- **The attester is a trusted relay.** A false report can only tighten the budget or freeze the agent; silence is bounded by the floats.
+- **Sui has no vault,** so Sui spending is booked and policed but not topped up.
+- **Mirror lag:** the mirror reaches each chain about one of that chain's blocks after the guard books a spend (12 s on Ethereum Sepolia). A facilitator on a slow chain can briefly see a slightly stale budget; the float bounds that window.
+
+Log: `deployments/sui-demo-log.txt`.

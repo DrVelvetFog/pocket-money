@@ -1,0 +1,27 @@
+pm-agent-sui keystore password: 
+pm-seller keystore password: 
+pm-owner keystore password: 
+attester watching 0xf2a997b876391c71546df1e8d92a4f4e803636997888cdf44df32ca32dd8c75f on Sui testnet -> inbox 0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172 as 0xB8232D5437Aa124c235c8321dec2d1003863cB65
+
+================ 1. the agent pays the shop $0.10 on Sui ================
+   sui payment 2RW6ZSAnq9gKzvCssRBCAUiWFLYze9yzPsKk5cQmm8wF  ok=true
+   attester reported it:   0xf0952750e50a4b1b79f4bc220b441b45016c5a8236305599726351acd4fa78a0 (Base Sepolia inbox)
+   guard booked it:        0x6125ff7b18e09908470239441e451d41c459f3ceac2659d9afbf157e92ff7928 (Lasna)
+   mirror on 84532: 2600000 left (was 2700000)
+   mirror on 1301: 2600000 left (was 2700000)
+   mirror on 11155111: 2700000 left (was 2700000)
+
+================ 2. the agent pays an unknown Sui address ================
+   sui payment CLgZAEKncRGmxwNMuqmXZXDYCJjbkhVfy2j8wMKqRCHm  ok=true
+   guard quarantined the agent: 0x5c86e188963ccc0356f784ec7b75d9f7f72a4a91ca33e9eaab1a865fcdc0ed2a (Lasna)
+   frozen on 84532: 0x34aa8c1792e8a6b7193f69b8c649199606abcb01bcaf2c1d4e83452dc1683ade
+   frozen on 1301: 0xf63f19eaf9af18b55f914a19d69c7a846628dd99b227650130a370a7a49f4288
+   frozen on 11155111: 0xbf46c7ff0dfe5bc6e9819c2b151065332c1caa20a380e59c4731aa72ef52cdbe
+
+================ reset ================
+   owner tx 0x4aee8bcff2c34a8370631b3d77b46e63734789d677ae72ab2ef673376d5c7fbd
+   owner tx 0x182fb70b59c4b0bfb48defa878e5e91e4652893acaf8e8d66d8cd3fb5425beb1
+   owner tx 0x8d1fdd56d8e681c178d17f30694a13d36e3caabad61e27536203aade62932532
+   owner tx 0xfb22c7586bf786001ebea44f961024d5a00ad0dd852c3550c75aa901ee9068f7
+   attester: reported sui 2RW6ZSAnq9gKzvCssRBCAUiWFLYze9yzPsKk5cQmm8wF (100000 units to 0x2a316b4e56041b8c237f985a823af7b8054cccd7cc73200055cb220fc857ff33) -> base 0xf0952750e50a4b1b79f4bc220b441b45016c5a8236305599726351acd4fa78a0
+   attester: reported sui CLgZAEKncRGmxwNMuqmXZXDYCJjbkhVfy2j8wMKqRCHm (10000 units to 0x000000000000000000000000000000000000000000000000000000000000dead) -> base 0x847aa54c3d0a60c36a6bcae5d92bcd3d96286cc3db28ff631da2198f4778f116
