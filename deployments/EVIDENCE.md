@@ -108,3 +108,22 @@ The guard and the Base vault share an address by nonce coincidence; they're diff
 **After resets (checked on-chain):** not panicked, agent not quarantined, every vault un-frozen.
 
 Logs: `deployments/deploy-v3-log.txt`, `deployments/week2-loops-v3-log.txt`.
+
+## Week 2: the agent pays over x402 and holds no ETH (2026-11-10)
+
+- **The agent's daily job:** it buys a $0.10 BTC report from our x402 seller (`agent/src/seller.ts`). The seller settles the agent's signed EIP-3009 authorization itself and pays the gas, from `pm-seller` `0xB8232D5437Aa124c235c8321dec2d1003863cB65`.
+- **The agent never sends a transaction.** Its nonce was unchanged on every chain: Base 3→3, Unichain 4→4, Ethereum Sepolia 2→2.
+- **Pocket Money still sees every payment:** each one is a USDC `Transfer` *from the agent*.
+
+| Chain | Origin (sent by seller; Transfer agent→seller 100000) | Reactive | Top-up callback |
+|---|---|---|---|
+| Base Sepolia | `0xef205412…fc06` | `0x3716acba…7a56` | `0xbadf2b4b…ea23` (blk 56947033) |
+| Unichain Sepolia | `0x2ffa3e4d…20a7` | `0x0120247b…647f` | `0x198ad1dd…0aa5` (blk 67458854) |
+| Ethereum Sepolia | `0xe6672f42…97fe` | `0x7d995091…91a1` | `0xfa1a45c7…5604` (blk 12104434) |
+
+- **Checked on-chain:** each origin receipt shows `AuthorizationUsed(agent)` and `Transfer(agent → seller, 0.10 USDC)`, with tx `from` = the seller.
+- **Guard afterwards:** 7 receipts in the chain, head `0xbd855a47…2156`; agent spent $1.30 and was topped up $1.05 today (the $0.25 stray payment is never refilled).
+- **On Unichain the agent sits at $0.75, not $1.** The vault fills "what was spent" up to the float, and the earlier stray $0.25 is still missing by design.
+- **x402's own client-side limits are set too** (only Circle USDC on these chains, ≤ $0.25 per payment), but they live in the agent's process. Pocket Money's limits are on-chain and survive a stolen key.
+
+Log: `deployments/x402-demo-log.txt`.

@@ -1,0 +1,67 @@
+pm-seller keystore password: 
+pm-agent keystore password: 
+seller up: {"ok":true,"payTo":"0xB8232D5437Aa124c235c8321dec2d1003863cB65","chains":[84532,1301,11155111]}
+
+================ chain 84532 ================
+{
+  "chain": "Base Sepolia",
+  "report": {
+    "btcUsd": 74318.995,
+    "verdict": "below band",
+    "gapToLow": -20681,
+    "gapToHigh": -27681
+  },
+  "settlement": {
+    "success": true,
+    "transaction": "0xef20541217afceb3b182f377c2af7be918a065f9de82575508c76afa0030fc06",
+    "payer": "0x7Cd681561d75805156568ccF6D8f1Cf0536da06b"
+  }
+}
+origin    0xef20541217afceb3b182f377c2af7be918a065f9de82575508c76afa0030fc06  (sent by 0xB8232D5437Aa124c235c8321dec2d1003863cB65 — the seller, not the agent)
+agent nonce before/after: 3/3  (unchanged = agent sent nothing)
+reactive  0x3716acbadc5a1d5c0b36b4ccbc8c1a648c91f636ec4045353d5c908092ce7a56  (Lasna)
+callback  0xbadf2b4bbe5710f4114dbe1d76b476f772e7a39e843e0499e9452303578fea23  block 56947033
+agent USDC now: 1000000 [1e6]
+
+================ chain 1301 ================
+{
+  "chain": "Unichain Sepolia",
+  "report": {
+    "btcUsd": 74318.995,
+    "verdict": "below band",
+    "gapToLow": -20681,
+    "gapToHigh": -27681
+  },
+  "settlement": {
+    "success": true,
+    "transaction": "0x2ffa3e4d49886910f74dc34104bb4dcba1473d06cfcb8b6328d4c38ade5c20a7",
+    "payer": "0x7Cd681561d75805156568ccF6D8f1Cf0536da06b"
+  }
+}
+origin    0x2ffa3e4d49886910f74dc34104bb4dcba1473d06cfcb8b6328d4c38ade5c20a7  (sent by 0xB8232D5437Aa124c235c8321dec2d1003863cB65 — the seller, not the agent)
+agent nonce before/after: 4/4  (unchanged = agent sent nothing)
+reactive  0x0120247bc3e1820fd33d2b1c25930fcb02cce010ec3416e43e9f9b57cee0647f  (Lasna)
+callback  0x198ad1dd78400a087784e81f3fc982463e6ff2446a9a505177bd5e31cea90aa5  block 67458854
+agent USDC now: 750000 [7.5e5]
+
+================ chain 11155111 ================
+{
+  "chain": "Ethereum Sepolia",
+  "report": {
+    "btcUsd": 74315.645,
+    "verdict": "below band",
+    "gapToLow": -20684,
+    "gapToHigh": -27684
+  },
+  "settlement": {
+    "success": true,
+    "transaction": "0xe6672f42ed9be2735a1ee265d45c223882ffc8fc5dafe50953c5923f346f97fe",
+    "payer": "0x7Cd681561d75805156568ccF6D8f1Cf0536da06b"
+  }
+}
+origin    0xe6672f42ed9be2735a1ee265d45c223882ffc8fc5dafe50953c5923f346f97fe  (sent by 0xB8232D5437Aa124c235c8321dec2d1003863cB65 — the seller, not the agent)
+agent nonce before/after: 2/2  (unchanged = agent sent nothing)
+reactive  0x7d995091eaa6bcfedd043d6e07e05a875c3c4c85cfa1dcc0747c7c1a640391a1  (Lasna)
+callback  0xfa1a45c7c35609738a47fe86c5195bacbeff508084e1f0c7cbbb6178a7b05604  block 12104434
+agent USDC now: 1000000 [1e6]
+./script/x402-demo.sh: line 66: 23172 Terminated: 15          ( cd agent && PORT=$PORT npx tsx src/seller.ts > ../deployments/seller.log 2>&1 )
