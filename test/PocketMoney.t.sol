@@ -319,4 +319,15 @@ contract PocketMoneyTest is Test {
         assertEq(pm.receiptHead(), expected);
         assertEq(pm.receiptCount(), 2);
     }
+
+    // ---- callback gas ----
+
+    function test_callbacksUseThePerChainGasLimit() public {
+        assertEq(pm.callbackGasOf(ETH), 1_000_000);
+        pm.setCallbackGas(ETH, 1_500_000);
+        _spend(andy, ETH, shop, 1e6);
+        ISystemContract.CallbackConfiguration_V_1_0 memory c = sys.callbackAt(sys.callbackCount() - 1);
+        assertEq(c.chainId, ETH);
+        assertEq(c.gasLimit, 1_500_000);
+    }
 }

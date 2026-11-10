@@ -65,8 +65,24 @@ elif [[ -f deployments/base-sepolia.env && -z "${KEEP_V1:-}" ]]; then
   [[ "$e" != "0" ]] && send $V1PM "withdraw(address,address,uint256)" 0x0000000000000000000000000000000000000000 $OWNER $e --rpc-url $(rpc 84532)
 fi
 
+if [[ -z "${RESUME:-}" && -f $OUT ]]; then
+  step "0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)"
+  (
+    source $OUT
+    for c in "${CHAINS[@]}"; do
+      V=$(eval echo \${VAULT_$c:-}); [[ -z "$V" ]] && continue
+      send $V "migrate(address)" $OWNER --rpc-url $(rpc $c)
+    done
+    bal=$(cast balance $PM --rpc-url $LASNA)
+    [[ "$bal" != "0" ]] && send $PM "withdraw(address,uint256)" $OWNER $bal --rpc-url $LASNA
+    true
+  )
+  mkdir -p deployments/archive
+  mv $OUT deployments/archive/testnet-$(date +%Y%m%d-%H%M%S).env
+fi
+
 if [[ -z "${RESUME:-}" ]]; then
-  step "1 deploy PocketMoney v2 on Lasna"
+  step "1 deploy PocketMoney on Lasna"
   PM=$(forge create src/PocketMoney.sol:PocketMoney --rpc-url $LASNA "${SIGN[@]}" --broadcast \
     --value $PM_FUND --json --constructor-args $CEILING | jq -r .deployedTo)
   echo "   PocketMoney $PM"

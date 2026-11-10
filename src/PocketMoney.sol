@@ -20,7 +20,10 @@ contract PocketMoney is AbstractReactive {
     uint256 internal constant CRON_TOPIC =
         0xd214e1d84db704ed42d37f538ea9bf71e44ba28bc1cc088b2f5deca654677a56;
     address internal constant CRON_SOURCE = 0x0000000000000000000000000000000000fffFfF;
-    uint64 internal constant CALLBACK_GAS = 400_000;
+    /// @dev Callbacks bill gas used, not the limit, so a generous default costs nothing. Each
+    /// destination's proxy withholds its own overhead first (150k on Ethereum Sepolia, 80k on
+    /// Base and Unichain Sepolia), and a top-up there needs ~182k more, so 400k was too tight.
+    uint64 internal constant DEFAULT_CALLBACK_GAS = 1_000_000;
 
     struct Chain {
         address usdc;
@@ -56,6 +59,7 @@ contract PocketMoney is AbstractReactive {
     event PayeeSet(address indexed payee, bool approved);
     event CeilingSet(uint256 ceiling);
     event CronSet(bool on);
+    event CallbackGasSet(uint256 indexed chainId, uint64 gasLimit);
     event Resumed(address indexed agent); // agent = 0 means the household-wide panic
 
     address public immutable owner;
@@ -76,6 +80,7 @@ contract PocketMoney is AbstractReactive {
     mapping(uint256 => Chain) public chains;
     uint256[] public chainIds;
     mapping(uint256 => uint64) public seqOf;
+    mapping(uint256 => uint64) public callbackGasOf;
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -164,7 +169,7 @@ contract PocketMoney is AbstractReactive {
     function _callback(uint256 chainId, address recipient, bytes memory payload) internal {
         SYSTEM.requestCallbackV_1_0(
             ISystemContract.CallbackConfiguration_V_1_0({
-                chainId: chainId, recipient: recipient, gasLimit: CALLBACK_GAS, payload: payload
+                chainId: chainId, recipient: recipient, gasLimit: callbackGasOf[chainId], payload: payload
             })
         );
     }
@@ -202,7 +207,10 @@ contract PocketMoney is AbstractReactive {
 
     /// @notice Register a chain: watch every agent's USDC transfers there and the vault's panic button.
     function addChain(uint256 chainId, address usdc, address vault) external onlyOwner {
-        if (chains[chainId].vault == address(0)) chainIds.push(chainId);
+        if (chains[chainId].vault == address(0)) {
+            chainIds.push(chainId);
+            callbackGasOf[chainId] = DEFAULT_CALLBACK_GAS;
+        }
         chains[chainId] = Chain(usdc, vault);
         for (uint256 i; i < agentList.length; ++i) _watch(chainId, usdc, agentList[i]);
         SYSTEM.subscribe(chainId, vault, PANIC_TOPIC, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
@@ -219,6 +227,11 @@ contract PocketMoney is AbstractReactive {
         }
         a.allowance = allowance;
         emit AgentSet(agent, allowance);
+    }
+
+    function setCallbackGas(uint256 chainId, uint64 gasLimit) external onlyOwner {
+        callbackGasOf[chainId] = gasLimit;
+        emit CallbackGasSet(chainId, gasLimit);
     }
 
     function setPayee(address payee, bool approved) external onlyOwner {
