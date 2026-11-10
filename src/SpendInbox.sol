@@ -10,6 +10,7 @@ pragma solidity ^0.8.29;
 contract SpendInbox {
     error NotAttester();
     error AlreadyReported(bytes32 ref);
+    error ZeroAttester();
 
     /// @param payee  the payee on the source chain (a Sui address is 32 bytes)
     /// @param source short label of the source chain, e.g. "sui:testnet"
@@ -20,6 +21,7 @@ contract SpendInbox {
     mapping(bytes32 => bool) public reported;
 
     constructor(address attester_) {
+        if (attester_ == address(0)) revert ZeroAttester();
         attester = attester_;
     }
 

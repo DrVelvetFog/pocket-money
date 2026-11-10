@@ -130,7 +130,7 @@ contract Vault is AbstractCallback {
     function topUp(address guard_, address agent, uint256 amount, uint64 seq) external onlyGuard(guard_) {
         // Monotonic, not strictly sequential: replays and stale top-ups are dropped, but a
         // failed delivery (gap) can't wedge every later top-up.
-        bytes32 skip;
+        bytes32 skip = 0;
         if (seq <= lastSeq) skip = "stale";
         else lastSeq = seq;
         uint256 float = floatOf[agent];
@@ -185,7 +185,7 @@ contract Vault is AbstractCallback {
     /// @notice Send liquidity to a sibling vault over CCTP, within the owner's limits.
     function rebalance(address guard_, uint32 destDomain, uint256 amount, uint256 maxFee) external onlyGuard(guard_) {
         bytes32 dest = peerOf[destDomain];
-        bytes32 why;
+        bytes32 why = 0;
         if (address(tokenMessenger) == address(0)) why = "no cctp";
         else if (dest == 0) why = "not a peer";
         else if (frozen) why = "frozen";
@@ -195,7 +195,7 @@ contract Vault is AbstractCallback {
             emit RebalanceDeclined(destDomain, amount, why);
             return;
         }
-        usdc.approve(address(tokenMessenger), amount);
+        if (!usdc.approve(address(tokenMessenger), amount)) revert TransferFailed();
         // destinationCaller 0: anyone may relay Circle's attestation and complete the mint.
         tokenMessenger.depositForBurn(amount, destDomain, dest, address(usdc), bytes32(0), maxFee, FAST_FINALITY);
         emit RebalanceSent(destDomain, dest, amount);

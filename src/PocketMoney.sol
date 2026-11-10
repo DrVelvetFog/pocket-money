@@ -263,9 +263,10 @@ contract PocketMoney is AbstractReactive {
         if (lowWater == 0 || rebalancing[low] || bal >= lowWater) return;
         uint256 need = targetLevel > bal ? targetLevel - bal : 0;
         if (need == 0) return;
-        uint256 donor;
-        uint256 best;
-        for (uint256 i; i < chainIds.length; ++i) {
+        uint256 donor = 0;
+        uint256 best = 0;
+        uint256 n = chainIds.length;
+        for (uint256 i; i < n; ++i) {
             uint256 id = chainIds[i];
             if (id == low || rebalancing[id]) continue;
             uint256 b = vaultBalanceOf[id];
@@ -307,7 +308,8 @@ contract PocketMoney is AbstractReactive {
     function _roll() internal {
         if (block.timestamp < dayStart + 1 days) return;
         emit Statement(day, spentToday, toppedUpToday, receiptCount, receiptHead);
-        for (uint256 i; i < agentList.length; ++i) {
+        uint256 n = agentList.length;
+        for (uint256 i; i < n; ++i) {
             Agent storage a = agents[agentList[i]];
             emit AgentStatement(day, agentList[i], a.spentToday, a.toppedUpToday);
             a.spentToday = 0;
@@ -359,14 +361,16 @@ contract PocketMoney is AbstractReactive {
     /// @notice Add an agent (watched on every registered chain) or change its daily allowance.
     function setAgent(address agent, uint256 allowance) external onlyOwner {
         Agent storage a = agents[agent];
-        if (!a.known) {
-            a.known = true;
+        bool isNew = !a.known;
+        a.known = true;
+        a.allowance = allowance; // state first, then the system-contract calls
+        if (isNew) {
             agentList.push(agent);
-            for (uint256 i; i < chainIds.length; ++i) {
+            uint256 n = chainIds.length;
+            for (uint256 i; i < n; ++i) {
                 _watch(chainIds[i], chains[chainIds[i]].usdc, uint256(uint160(agent)), REACTIVE_IGNORE);
             }
         }
-        a.allowance = allowance;
         emit AgentSet(agent, allowance);
         emit SyncRequested(agent);
     }
