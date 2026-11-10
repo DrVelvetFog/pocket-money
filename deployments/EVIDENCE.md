@@ -245,3 +245,24 @@ This version includes both fuzzer-found fixes.
 **Retirement:** retiring v4 hit a race the first time. The old guard paid fees for reacting to the vaults' `migrate()` transfers between our balance read and the withdrawal. It now withdraws with a margin (`0xf1220bbe…a5a1`).
 
 Logs: `deployments/deploy-*.log`, `deployments/raise-demo-*.log`.
+
+## v5: Solana spending counts against the same budget (2026-11-10)
+
+The same SpendInbox and the same guard as Sui. The Solana attester (`agent/src/solana-attester.ts`) follows the agent's signatures on Solana devnet and reads each transaction's net USDC token-balance changes.
+
+- Agent on Solana: `5r1ZGoTwDemrrTXzS82RRC8xGkKms1neC2C42ScSGqRu`
+- Shop (the seller's Solana identity, approved): `AWx4Tw82rgSGR8FKDoLsaMrfJzhehApMU7fX52ia9rkR`
+
+| Step | Where | Tx |
+|---|---|---|
+| agent pays the shop $0.10 | Solana devnet | `2uTzymn94zx5RQ98uPpUj2V9t5YXxDX3bqZXF8cq3rAycsZb4Wo2jCHb5LvM3bs2KYX8ryZH3M7eEyqpnfbJs1kd` |
+| attester reports it | Base Sepolia inbox | `0x222564cd…312b` |
+| guard books it; the mirror drops $3.00 → $2.90 on **all three** EVM chains | Lasna | `0x2fc242e5…d324` |
+| agent pays $0.01 to an unapproved address | Solana devnet | `n816BXBzXKK7yv3VafLP5KAz5HZ2JN36RsfEsi1esniMxX4p5Fv2pG6zMf3bqsQu3zyk7LdK1C7kJ2qnbvBRcW9` |
+| attester reports it | Base Sepolia inbox | `0x9aa756a0…26a6` |
+| guard quarantines the agent | Lasna | `0x516f2210…6e3d` |
+| `AgentFrozen` | Base / Unichain / Ethereum Sepolia | `0x47ee4935…a74c` / `0xc0604c1b…973e` / `0x5f9d5018…05f9` |
+
+**Reset:** `resumeAgent` + `unfreezeAgent` ×3. Checked on-chain afterwards: not quarantined, unfrozen everywhere.
+
+**Getting devnet SOL:** the public RPC airdrop is closed, and the web faucet requires GitHub and asks AI agents not to use it. Tony requested the SOL himself.

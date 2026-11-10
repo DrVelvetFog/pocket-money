@@ -1,0 +1,27 @@
+pm-agent-sol keystore password: 
+pm-seller keystore password: 
+pm-owner keystore password: 
+attester watching 5r1ZGoTwDemrrTXzS82RRC8xGkKms1neC2C42ScSGqRu on Solana devnet -> inbox 0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d as 0xB8232D5437Aa124c235c8321dec2d1003863cB65
+
+================ 1. the agent pays the shop $0.10 on Solana ================
+   solana payment 2uTzymn94zx5RQ98uPpUj2V9t5YXxDX3bqZXF8cq3rAycsZb4Wo2jCHb5LvM3bs2KYX8ryZH3M7eEyqpnfbJs1kd
+   attester reported it:   0x222564cd90f8845cee56a632e91a4378cdfe5f975dc61e61265df3c46764312b (Base Sepolia inbox)
+   guard booked it:        0x2fc242e5dedf6e3de295b8f650ae74ade8da5493187862ec2e71a60c7a35d324 (Lasna)
+   mirror on 84532: 2900000 left (was 3000000)
+   mirror on 1301: 2900000 left (was 3000000)
+   mirror on 11155111: 2900000 left (was 3000000)
+
+================ 2. the agent pays an unknown Solana address ================
+   solana payment n816BXBzXKK7yv3VafLP5KAz5HZ2JN36RsfEsi1esniMxX4p5Fv2pG6zMf3bqsQu3zyk7LdK1C7kJ2qnbvBRcW9
+   guard quarantined the agent: 0x516f22107f7f83a3989aba702a7ebd592522606d713aa99c0ea017d8b91d6e3d (Lasna)
+   frozen on 84532: 0x47ee49353bc4fdc3af95ba922e90f3f4968c1369387e2810e075f219d6eea74c
+   frozen on 1301: 0xc0604c1bbb68bd40837d82aaba8d3c170c5a83f93b4457e09a3509195e61973e
+   frozen on 11155111: 0x5f9d501865323847bced46291bc04ac01320c5cd8b01e7d7912b54c52ef205f9
+
+================ reset ================
+   owner tx 0x6c50e0008da293b47ff13f5e23115ea97c6715a55f26edeef07e15a91bb92ed7
+   owner tx 0x7ee2e2bd292b170a02e1892725b2dd2817606371e9cca42b7818ecdbbcd0c786
+   owner tx 0x572d1b0c40a9ea0017490906c3fc061dc30f6d6d919cd36c3ab29db61c0a9fb6
+   owner tx 0x72998dd1600628d9bf95d9892c944a10ddbd1263c73ddb12737da91c76899a06
+   attester: reported solana 2uTzymn94zx5RQ98uPpUj2V9t5YXxDX3bqZXF8cq3rAycsZb4Wo2jCHb5LvM3bs2KYX8ryZH3M7eEyqpnfbJs1kd (100000 units to AWx4Tw82rgSGR8FKDoLsaMrfJzhehApMU7fX52ia9rkR) -> base 0x222564cd90f8845cee56a632e91a4378cdfe5f975dc61e61265df3c46764312b
+   attester: reported solana n816BXBzXKK7yv3VafLP5KAz5HZ2JN36RsfEsi1esniMxX4p5Fv2pG6zMf3bqsQu3zyk7LdK1C7kJ2qnbvBRcW9 (10000 units to 11111111111111111111111111111112) -> base 0x9aa756a0e5c575a6637cc8bd31be1a8ca8c07d0cee5d92aeaddf35e32d7426a6
