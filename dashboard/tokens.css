@@ -1,0 +1,51 @@
+/* Hallmark · route: custom (tuned) · vibe: "bank passbook, warm paper, red-ink stamps"
+ * paper: oklch(95% 0.018 85) · accent: oklch(50% 0.17 28) red ink
+ * display: Newsreader · body: Newsreader · outlier: Courier Prime (hashes + stamps)
+ * axes: light / roman-serif / warm
+ */
+:root {
+  --color-paper: oklch(95% 0.018 85);
+  --color-paper-2: oklch(92% 0.024 82);
+  --color-paper-3: oklch(88% 0.03 80);
+  --color-ink: oklch(23% 0.014 55);
+  --color-ink-2: oklch(42% 0.014 55);
+  --color-ink-3: oklch(56% 0.012 60);
+  --color-rule: oklch(80% 0.025 78);
+  --color-rule-strong: oklch(62% 0.02 70);
+  --color-accent: oklch(50% 0.17 28);
+  --color-accent-wash: oklch(50% 0.17 28 / 0.1);
+  --color-focus: oklch(50% 0.17 28);
+
+  --font-display: "Newsreader", ui-serif, "Iowan Old Style", serif;
+  --font-body: "Newsreader", ui-serif, "Iowan Old Style", serif;
+  --font-outlier: "Courier Prime", ui-monospace, "SF Mono", monospace;
+
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.333rem;
+  --text-xl: 1.777rem;
+  --text-2xl: 2.369rem;
+  --text-display: clamp(4.5rem, 3rem + 7vw, 9rem);
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  --rule-hair: 1px;
+  --rule-double: 3px;
+  --radius-sm: 2px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 260ms;
+  --dur-slow: 520ms;
+}

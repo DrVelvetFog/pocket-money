@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pocket Money · Passbook</title>
+  <meta name="description" content="A live passbook for an AI agent's cross-chain allowance, read straight from the chains." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="wordmark">Pocket Money</div>
+    <div class="masthead-meta">
+      <span>Passbook of <strong id="agent-name">—</strong></span>
+      <span class="mono" id="agent-addr">—</span>
+    </div>
+    <div class="status" id="status" data-state="loading" role="status" aria-live="polite">Reading the chains…</div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-figure">
+      <p class="hero-day mono" id="run-day">—</p>
+      <h1 class="hero-figure" id="hero-figure"><span class="odometer" id="odometer" aria-hidden="true"></span><span class="sr-only" id="hero-figure-text">—</span></h1>
+      <p class="hero-words">left to spend today, on every chain at once.</p>
+      <div class="budget-bar" aria-hidden="true"><span id="budget-fill"></span></div>
+      <dl class="hero-facts">
+        <div><dt>Allowance</dt><dd id="f-allowance">—</dd></div>
+        <div><dt>Spent today</dt><dd id="f-spent">—</dd></div>
+        <div><dt>Raise today</dt><dd id="f-raise">—</dd></div>
+        <div><dt>Resets in</dt><dd id="f-reset">—</dd></div>
+      </dl>
+    </section>
+
+    <section class="chains" aria-labelledby="chains-h">
+      <h2 id="chains-h">Floats and mirrors</h2>
+      <p class="section-note">The agent holds only a small float on each chain. Each vault keeps its own copy of the shared budget, so a facilitator can refuse an over-budget payment before it settles.</p>
+      <div class="chain-grid" id="chain-grid"></div>
+    </section>
+
+    <section class="ledger" aria-labelledby="ledger-h">
+      <h2 id="ledger-h">Ledger</h2>
+      <div class="ledger-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Description</th><th scope="col" class="num">Withdrawal</th><th scope="col" class="num">Deposit</th><th scope="col" class="num">Left today</th></tr>
+          </thead>
+          <tbody id="ledger-body"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="ledger-empty" hidden>No payments yet. The first line prints when the agent spends.</p>
+    </section>
+
+    <section class="statements" aria-labelledby="statements-h">
+      <h2 id="statements-h">Daily statements</h2>
+      <ol class="statement-row" id="statements"></ol>
+      <p class="empty" id="statements-empty" hidden>No statements yet. The guard closes each day on Reactive's timer and prints its statement here.</p>
+    </section>
+  </main>
+
+  <footer class="proof">
+    <p>Every line above is read from public chains, not from a server. Check it without trusting this page: <span class="mono">script/verify.sh</span> rebuilds the receipt chain from the origin transactions.</p>
+    <dl class="proof-facts">
+      <div><dt>Receipts</dt><dd class="mono" id="p-count">—</dd></div>
+      <div><dt>Receipt head</dt><dd class="mono" id="p-head">—</dd></div>
+      <div><dt>Guard (Reactive Lasna)</dt><dd><a class="mono" id="p-guard" href="#">—</a></dd></div>
+      <div><dt>Updated</dt><dd class="mono" id="p-updated">—</dd></div>
+    </dl>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
