@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Runs Pocket Money's daily agent job at 08:00 local time. If the Mac is asleep at 08:00, launchd
+     runs it at the next wake. Installed by script/go-live.sh (with your OK), removed by
+     script/go-live.sh --stop. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.uigstudios.pocketmoney.daily</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__REPO__/script/daily.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__REPO__/deployments/daily/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__REPO__/deployments/daily/launchd.err.log</string>
+</dict>
+</plist>
