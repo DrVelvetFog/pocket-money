@@ -1,0 +1,75 @@
+pm-owner keystore password: 
+
+== 0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)
+   tx 0x3164b38db1c0f07b48648a6ee02d429deffc9dd0976140417b4e147b44b7d83b status 0x1
+   tx 0xa554b68f08f1b77d4157e86b161a2843fcc1acec39ac8ba27233395fd5bb2502 status 0x1
+   tx 0xcf2555bb5a29e850abfbc433460b973c17a3a072a8daf97c0b3bbeeb44b8a8bf status 0x1
+   tx 0x6d00ecd1aaa87d313421a707bf2bb636ffb99fe99e0a6f6a1dad9e37c41c5093 status 0x1
+
+== 1 deploy PocketMoney on Lasna
+   PocketMoney 0x3F6A1d1F9782Cf24b106E7839F0ca420CdF7f5C2
+
+== 2 vault on chain 84532
+   Vault 0xefa6F7C7b4225A08C5b0e40CF6862F1A5d79e58f
+   tx 0xc734551a5392230e4e008008bac74c8822fde21dffb73dbfb64778eba133a9d7 status 0x1
+   tx 0x1f1fb8b977135b856f1a065afe59ed6aa6394ec42ffe93dbda204f8a6acdc43d status 0x1
+
+== 3 register chain 84532 on the guard
+   tx 0x9088dbfd6c56f38c63c9fe6e45a2c434cc9b83fabdabfddbbb8fcc17afc2624b status 0x1
+   tx 0xe3d6c3874c675e5ed5d9bc0b9e1dd02b4668c4dfb9a1a09e90bd310b236b38be status 0x1
+
+== 2 vault on chain 1301
+   Vault 0x105074aE7C7949de0e6e5870bE2Cc0498552d45D
+Error: contract 0x105074ae7c7949de0e6e5870be2cc0498552d45d does not have any code
+   (stale nonce, retrying)
+   tx 0x5ba85a9433afdad65ada9a3183c1037b0d3d251ac11909e3faa65da29e363588 status 0x1
+   tx 0xc8ff39592aebfb83689f273244307157bea0e8f722cd89a54e28e12a2cfe913e status 0x1
+   (stale nonce, retrying)
+   tx 0x5d18b2f12d394a06839441d46b6e56d98454df35b1aa4706b179a3492b0da209 status 0x1
+
+== 3 register chain 1301 on the guard
+   tx 0x6c38bed962f813a641508721738d8630e21f5897d8d62498489aacec149aa87a status 0x1
+   tx 0xb3200b3a60c7edfd6ce45a19938e8fcd3fc5b75e705fbb33bd03b1b3dca705e6 status 0x1
+
+== 2 vault on chain 11155111
+   Vault 0x900025EBFb12b06F08fb22972e11964FffD2d576
+   tx 0x12edae84e6e2b6fca65a82923b702675206141528ef95fd455cb12a84fe44bfe status 0x1
+   (stale nonce, retrying)
+   tx 0x70a3e441dd053460878df34919274be74ea01ea4a8f26cf8ec42eb27ca0125fd status 0x1
+
+== 3 register chain 11155111 on the guard
+   tx 0x75b795de79b57a101c5f14caa6580035cd0ed119396b9c1d324daaa1b432544f status 0x1
+   tx 0x86dd97701b690e26538158a65ee328add884eed285300b0beca96d8d5755d7a6 status 0x1
+
+== 3b CCTP: every vault may send to its siblings, up to the cap
+   tx 0xfc7c629cff3d6f9fd063391bbcf24c75b4b5efe2545f290ca40f01b8db24756a status 0x1
+   tx 0x4c9e48a71567733c4485c646d87fe857b408fdee512bd1a55fa8af7ea8e48b53 status 0x1
+   tx 0x689ac4032f9cfa0695e0f9b0792394fae7fadccdff535b15ae57061c4effe0d5 status 0x1
+   tx 0x59b7c6dceca9d4207ca5fff3cbf0b860639d2e03d556e1e9d2e8511df9b9625f status 0x1
+   (stale nonce, retrying)
+   tx 0x0b7d6e0ab2f8766a23f286459fa7b41cfe83503e11ee91bcec05fe676f275d1b status 0x1
+   (stale nonce, retrying)
+   tx 0xc8512b8fdb9ec26a82f64342d962a7c3abf7c6897a8574857610eb066f8a8573 status 0x1
+   tx 0xa737b0d6c710052059720289063da4541d018e449fdfa5865783c2ff8d158c9e status 0x1
+   tx 0x9dfd091a7551ca7459ff1388d5407390de232b59352b0133830c8a6d50be66d5 status 0x1
+   tx 0x5f4ce39bc7347cd093bca52557c31978789347d4fd9520e3ce8439b286533a13 status 0x1
+   tx 0x2c451433d13845415e131a31624c08dc5f8ed43e36d75dce649d870694798a71 status 0x1
+
+== 3c Sui spend inbox on Base Sepolia (attester = the seller's service key)
+   SpendInbox 0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172
+   tx 0xe9f32152b66e4ca3dbd01526b6e20aa246fb959ed389f4b6be409048adf7e434 status 0x1
+
+== 4 household: payees, then the agent (which pushes its budget mirror to every vault)
+   tx 0x84ccadd8e0a5ce0c99674289f177d63d4d75472658a5da6182e87371ec577ebb status 0x1
+   tx 0x20429783bdf1eb0151879c8268eb6eb71a4208d0e9807c653c3e833a62eacae9 status 0x1
+   tx 0x04fa6f31b0a855dd54e6a4c3a0dace1abbd2263009179029d9462018c9010972 status 0x1
+
+Deployed. Saved to deployments/testnet.env
+OWNER=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+AGENT=0x7Cd681561d75805156568ccF6D8f1Cf0536da06b
+PAYEE=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+PM=0x3F6A1d1F9782Cf24b106E7839F0ca420CdF7f5C2
+VAULT_84532=0xefa6F7C7b4225A08C5b0e40CF6862F1A5d79e58f
+VAULT_1301=0x105074aE7C7949de0e6e5870bE2Cc0498552d45D
+VAULT_11155111=0x900025EBFb12b06F08fb22972e11964FffD2d576
+INBOX=0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172

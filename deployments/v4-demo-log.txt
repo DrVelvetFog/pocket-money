@@ -1,0 +1,30 @@
+pm-seller keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+seller and relayer up
+
+================ 1. budget set on Reactive shows up on every chain ================
+   owner tx 0x40674081bae9608feb2aee78fe90065897d9048a30be0083e0c7057b4899fa5e
+   mirror on 84532 says the agent has 300000 left
+   mirror on 1301 says the agent has 300000 left
+   mirror on 11155111 says the agent has 3000000 left
+
+================ 2. three purchases on Base Sepolia; the last drains the Base vault below $3 ================
+   buy 1: settled 0xa6ea9fe0b55c89d3c2f88d3e3027860018362d34b7c44e96aba8adb3e8e546cc
+   buy 2: settled 0x9d368c65032c31f7dea23590b67cfb54e9644aa8937387a5bdfa0e210054ce50
+   buy 3: settled 0xc043ecaad75c4c567d09006c23435833b4c2a8f43a561d86a94828a3a32e9fcc
+   Base vault now 2900000
+   guard asked for a refill:      0xb090179b5e7993fb50b6df224a4695a5aa17e9ac271bfe910d75385b418546c6 (Lasna)
+   Ethereum Sepolia vault burned: 0xcadbf6b4d7425d20e3caa295cae40773a27e030e244a561c02e95a124d90c106
+   guard saw the mint land:       0x4f984215ca6b026eda189c8538ce39ebefb2adcb7854a17fc4d7ca2473300da8 (Lasna)
+   relayer: mint on Base Sepolia: 0x84e554c7c892e29a9268f94c687efdee1c73ea0281c81fac75d63c9538384de6 (success), attested after 20s
+   Base vault now 3999890
+
+================ 3. a 4th purchase, on Unichain: over budget, refused before settling ================
+   mirror on Unichain says 0 left
+   agent: seller said 402: {"error":"pocket_money_over_budget"}
+   seller: refused 0x7Cd681561d75805156568ccF6D8f1Cf0536da06b on 1301: over budget (left 0)
+   agent USDC on Unichain: 1000000 -> 1000000  (unchanged = nothing moved)
+
+================ reset: back to the normal allowance ================
+   owner tx 0x887229b4ec5da497b56a1fd40f7f8769f4b41a3646361ad3eedbbd7e3e67194a

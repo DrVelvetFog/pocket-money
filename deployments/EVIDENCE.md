@@ -141,3 +141,40 @@ The owner moved $0.10 USDC from Base Sepolia (domain 6) to Unichain Sepolia (dom
 | receiveMessage (mint) | Unichain Sepolia | `0x29314bc4…5437` |
 
 **Result:** the owner's Unichain balance went up by 99987. The 13-unit fee is 1.3 bps, matching `/v2/burn/USDC/fees/6/10`.
+
+## v4: budget mirror, refusal before settling, and a CCTP refill, all live (2026-11-10)
+
+**Contracts (current)**
+
+| | Address |
+|---|---|
+| Guard (Lasna) | `0x3F6A1d1F9782Cf24b106E7839F0ca420CdF7f5C2` |
+| Vault, Base Sepolia | `0xefa6F7C7b4225A08C5b0e40CF6862F1A5d79e58f` |
+| Vault, Unichain Sepolia | `0x105074aE7C7949de0e6e5870bE2Cc0498552d45D` |
+| Vault, Ethereum Sepolia | `0x900025EBFb12b06F08fb22972e11964FffD2d576` |
+| SpendInbox (Base Sepolia) | `0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172` |
+
+**1. The mirror.** The owner set the agent's allowance to $0.30 on Reactive (`0x40674081…fa5e`). The guard's self-subscription synced every vault.
+- The Ethereum Sepolia vault's `BudgetSynced` history: v1 $3.00 → v2 $0.30 → v3 $0.20 → v4 $0.10 → v5 $0 → v6 $2.70 (after the reset).
+- Ethereum Sepolia's 12 s blocks lag: when the script checked, its mirror still read $3.00; the $0.30 update landed in block 12104578.
+
+**2. CCTP refill.** Three x402 purchases on Base Sepolia:
+- settled `0xa6ea9fe0…46cc`, `0x9d368c65…ce50`, `0xc043ecaa…9fcc`
+- They drained the Base vault to $2.90, under the $3 low-water mark.
+
+| Step | Where | Tx |
+|---|---|---|
+| guard requests a refill from the fullest vault | Lasna | `0xb090179b…46c6` |
+| Ethereum Sepolia vault burns 1.10 USDC (CCTP v2 fast) | Ethereum Sepolia | `0xcadbf6b4…c106` |
+| relayer mints on Base (attested after 20 s) | Base Sepolia | `0x84e554c7…4de6` |
+| guard sees the mint land | Lasna | `0x4f984215…0da8` |
+
+**Result:** Base vault $2.90 → $3.99989 (1 bps CCTP fee); Ethereum Sepolia vault $8 → $6.90. The guard's tracked balances match on-chain exactly.
+
+**3. Refused before settling.** A 4th purchase on Unichain, where the agent hadn't spent at all that day.
+- The Unichain mirror said $0 left, so the seller returned `402 pocket_money_over_budget` and logged "refused … over budget (left 0)".
+- The agent's Unichain USDC stayed at 1000000. **Nothing moved.**
+
+**Reset:** `0x887229b4…194a`. Every vault now reports $2.70 left (the $3 allowance minus the $0.30 spent today).
+
+Logs: `deployments/v4-demo-log.txt`, `deployments/deploy-v4-log.txt`.
