@@ -266,3 +266,13 @@ The same SpendInbox and the same guard as Sui. The Solana attester (`agent/src/s
 **Reset:** `resumeAgent` + `unfreezeAgent` ×3. Checked on-chain afterwards: not quarantined, unfrozen everywhere.
 
 **Getting devnet SOL:** the public RPC airdrop is closed, and the web faucet requires GitHub and asks AI agents not to use it. Tony requested the SOL himself.
+
+## Receipt verifier (2026-11-10)
+
+`script/verify.sh` needs no keys. It checks the guard's receipt chain against the chains where the money moved:
+- **EVM payments:** the USDC `Transfer` in the origin transaction.
+- **Sui and Solana payments:** the inbox's `reported(ref)`.
+
+It then rebuilds every receipt hash.
+- **Live result:** `VERIFIED: 5 receipts`. The rebuilt head `0x613d1e7c…18b9` equals the guard's.
+- **Self-test:** `TAMPER=1` (one unit forged on receipt #0) breaks every later head and reports `FAILED`.
