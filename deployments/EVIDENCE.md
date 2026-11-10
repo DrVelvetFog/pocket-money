@@ -215,3 +215,33 @@ The budget mirror dropped on every EVM chain: $2.70 → $2.60, then $2.59 after 
 - **Mirror lag:** the mirror reaches each chain about one of that chain's blocks after the guard books a spend (12 s on Ethereum Sepolia). A facilitator on a slow chain can briefly see a slightly stale budget; the float bounds that window.
 
 Log: `deployments/sui-demo-log.txt`.
+
+## v5: ask for a raise, approved from any chain (2026-11-10)
+
+**Contracts (current)**
+
+| | Address |
+|---|---|
+| Guard (Lasna) | `0x77BE935e39274963E18E32567e980387aAAae6b8` |
+| Vault, Base Sepolia | `0xeceCBacAb0429915459E2874100b994E8dC3d222` |
+| Vault, Unichain Sepolia | `0x614EB7577B127870F8c2223deE869E9a799e78CC` |
+| Vault, Ethereum Sepolia | `0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172` |
+| SpendInbox (Base Sepolia) | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
+
+This version includes both fuzzer-found fixes.
+
+| Step | Where | Tx |
+|---|---|---|
+| allowance set to $0.20 | Lasna | `0x7af2b9da…4ccd` |
+| x402 purchase 1, 2 | Base Sepolia | `0xb6bb2e18…039a`, `0x706fdc9f…6db9` |
+| 3rd purchase on Unichain refused before settling (`pocket_money_over_budget`) | — | (no tx, nothing moved) |
+| owner approves a $0.30 raise **on Ethereum Sepolia** (`approveRaise`) | Ethereum Sepolia | `0xc45efba4…94f0` |
+| guard grants it (`RaiseGranted`) and re-syncs every mirror | Lasna | `0xf2a876e9…412c` |
+| retry on Unichain settles | Unichain Sepolia | `0x7dfe5f44…8339` |
+| reset to $3 | Lasna | `0x585ccd40…cf949` |
+
+**The Ethereum Sepolia vault's mirror,** from its `BudgetSynced` log: $3.00 → $0.20 → $0.10 → $0 → **$0.30 (raise)** → $0.20 → $3.00 after the reset. That last figure is the $3 allowance plus today's $0.30 raise, minus the $0.30 spent.
+
+**Retirement:** retiring v4 hit a race the first time. The old guard paid fees for reacting to the vaults' `migrate()` transfers between our balance read and the withdrawal. It now withdraws with a margin (`0xf1220bbe…a5a1`).
+
+Logs: `deployments/deploy-*.log`, `deployments/raise-demo-*.log`.

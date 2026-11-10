@@ -1,0 +1,7 @@
+pm-owner keystore password: 
+
+== 0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)
+   tx 0x8744a296711f1a854bb61798eb00e35fa4cc33d627b10a111bf98ab6d8c1a540 status 0x1
+   tx 0x5727c6408ee0d7e5e85719a563241918e9174578315e44a825089fdbee8f5fd2 status 0x1
+   tx 0x541704a378cf4b07776205a6a5757c9c5d30a34786a8dfe2e6e88c4c7b8add32 status 0x1
+Error: Failed to estimate gas: server returned an error response: error code 3: execution reverted, data: "0x03eb8b540000000000000000000000000000000000000000000000001e86e56755be68000000000000000000000000000000000000000000000000001e50639277bde800": InsufficientFunds(2199697700000000000 [2.199e18], 2184355300000000000 [2.184e18])

@@ -1,0 +1,5 @@
+pm-seller keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+================ the agent gets $0.20 for today and spends it on Base ================
+   owner tx 0xfdf238c1c3a004259a8be6c440b4b4ad268f200a047ba82ec4be16cb02209226

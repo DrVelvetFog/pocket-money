@@ -1,0 +1,71 @@
+pm-owner keystore password: 
+
+== 0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)
+   vault on 84532 already empty
+   vault on 1301 already empty
+   vault on 11155111 already empty
+   tx 0xf1220bbe7fb5e2017b52993b67e8bfbc2395770cba6bb2635aec7fb6d2b545a1 status 0x1
+
+== 1 deploy PocketMoney on Lasna
+   PocketMoney 0x77BE935e39274963E18E32567e980387aAAae6b8
+
+== 2 vault on chain 84532
+   Vault 0xeceCBacAb0429915459E2874100b994E8dC3d222
+   tx 0x1277f129fe1fc11c3a4784a94132fb98d595a632de38efd6ff560e064b104f9d status 0x1
+   tx 0x52a60731a5b6634c389869367c01f8b0796768d8aa12a761de87a783aaed107b status 0x1
+
+== 3 register chain 84532 on the guard
+   tx 0x65e258160ec3d9f326a826bc357195eb9e3a887ba787b9d0d1d74d3ae09fd11d status 0x1
+   tx 0xff38bef5cda2c4c33c466c56e9149eadf4699bf21d6c8cd6cbf961b50b6c175c status 0x1
+
+== 2 vault on chain 1301
+   Vault 0x614EB7577B127870F8c2223deE869E9a799e78CC
+   tx 0x83e6132a82e37a907842f60abe018af86b49e2bc95488bbbe585354755d60b2c status 0x1
+   (stale nonce, retrying)
+   tx 0x4ed6ed8cd7d05362e7b2011a57c7d631031db0df30a7bf4a4ef2d33e5df11620 status 0x1
+
+== 3 register chain 1301 on the guard
+   tx 0xe2d54b5eba8e506c8f577b0a882c15f7fae340049b0ac98c32926f3b3c27464e status 0x1
+   tx 0x980bc27aa77b995445aa90b3c9a7c8665b07af3703d3de01c8a3b11499300d80 status 0x1
+
+== 2 vault on chain 11155111
+   Vault 0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172
+   tx 0x54d248d41aa33a3a0bd0178c0b47f3096552b821826e6a982ec51c7c72e67714 status 0x1
+   tx 0x95915f99e63c37fb336f46943fa092a938189032c1dc2649b67532bcde514986 status 0x1
+
+== 3 register chain 11155111 on the guard
+   tx 0xe4fef0f064e2df51a07288ddd68f35f1a4f011d316159cc5704de52b85eecb60 status 0x1
+   tx 0x32b7d9e3c7acc10c6f2726e242cd20d8c002a1d4175f2c2a92a61468288ce122 status 0x1
+
+== 3b CCTP: every vault may send to its siblings, up to the cap
+   tx 0x602343cb7ca01d7420b0aa6e7c1124e2e207048d3d73f4da710b07836695eab3 status 0x1
+   tx 0xd3254dbf9ff65de7b7863437b34ed033abc3a9fdcecae459c9716c0acfe63f19 status 0x1
+   tx 0x95cc61d7817284afa15d05ca45c14086eda1706775db3732fa23095cb32e247e status 0x1
+   tx 0xc6064dcb6654059f069c7426638bca8e22e9cfe7619a572aea8c32637c184b64 status 0x1
+   (stale nonce, retrying)
+   tx 0x6aaeb7d2bb82999edb9cb5d117344925d76c5f7890bda22e0cccbabae66855eb status 0x1
+   tx 0x2e33e4b9da86a094f0e9ca311ddaee55d02529c36e9b664e9b23d7b281b6e351 status 0x1
+   tx 0x531b0af2b0ba47ddee593772f97416a3105117a2817068d889c414d49613fe1d status 0x1
+   tx 0x2ca36747b7ea883a8004922d7f71f1e99ea842e395a8e31c4f33d40e9290c3bd status 0x1
+   tx 0x0cd04529f0745ee1620f45b4b69820c39f88a5f70ca98bc044689144fe8fc058 status 0x1
+   tx 0x2492b42be4cd386359474c575d38c0c03ae0e2f57f3fc39d3229270f26e3ec97 status 0x1
+
+== 3c Sui spend inbox on Base Sepolia (attester = the seller's service key)
+   SpendInbox 0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d
+   tx 0xd51e005c6e36d2eeb10da4c98ba9c644e266e2277c31cbbaf57187d746869e47 status 0x1
+
+== 4 household: payees, then the agent (which pushes its budget mirror to every vault)
+   tx 0x2bbb09b6ecaf3ebe9d36e55993c5dd1b76710ea9f7741d602aea29b3e337d400 status 0x1
+   tx 0xc65b6459eb231873a5f7ef8e28a06e239d71f06eaaaa5577cd354270247a169b status 0x1
+   tx 0x1ff9c8227ac607edc34e4c4eb9cee4ded2c1a074a07b5d6a74aebf21124d6df9 status 0x1
+   tx 0x74f2f4e9bbb974cbc41b7388f8b263c6dfa34c8f204080cd5864c45384d65e84 status 0x1
+
+Deployed. Saved to deployments/testnet.env
+OWNER=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+AGENT=0x7Cd681561d75805156568ccF6D8f1Cf0536da06b
+PAYEE=0x9a822A254431C6798e1B13Cd809617399b8cda9c
+PM=0x77BE935e39274963E18E32567e980387aAAae6b8
+VAULT_84532=0xeceCBacAb0429915459E2874100b994E8dC3d222
+VAULT_1301=0x614EB7577B127870F8c2223deE869E9a799e78CC
+VAULT_11155111=0xa7860BF18A0eBd6397d672b45b4e17E47d1D0172
+INBOX=0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d

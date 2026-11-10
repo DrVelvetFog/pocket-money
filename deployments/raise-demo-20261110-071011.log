@@ -1,0 +1,26 @@
+pm-seller keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+================ the agent gets $0.20 for today and spends it on Base ================
+   owner tx 0x7af2b9da71dcfedaa028055931a64f10a2fe6c3dfbd2430d8b7d433a8cc24ccd
+   buy 1 settled 0xb6bb2e189f0756891c22c023b12d145c9769e00e01405d1db76ca3d0dbcf039a
+   buy 2 settled 0x706fdc9fb8de01f00331af3f54048646ef373b3e035be27905678192af1c6db9
+   mirror on Unichain: 0 left
+
+================ out of budget: refused before settling ================
+   agent: seller said 402: {"error":"pocket_money_over_budget"}
+   agent -> owner: "I'm out of budget for today. May I have $0.30 more?"
+
+================ the owner approves from Ethereum Sepolia ================
+   owner tx 0xc45efba431bd577a88bb831a795fcda3595e7e9d750e8cf7621a3802076394f0
+   guard granted it: 0xf2a876e9b98353898b3fca8d3653376bf5d8c4b722ddec241054d1528fd6412c (Lasna)
+   mirror on 84532: 300000 left
+   mirror on 1301: 300000 left
+   mirror on 11155111: 0 left
+
+================ the agent tries again on Unichain ================
+   settled 0x7dfe5f44c2f7b542f07708f7bad4ed73c27e752a379de2da1c0b5c24628f8339
+   (earlier) seller: refused 0x7Cd681561d75805156568ccF6D8f1Cf0536da06b on 1301: over budget (left 0)
+
+================ reset ================
+   owner tx 0x585ccd40404cd560c0db5fe93af528e4378e061fa5dab8b4de1bef54a22cf949
