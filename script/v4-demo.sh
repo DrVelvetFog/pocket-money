@@ -6,6 +6,7 @@
 # (2, Sui, has its own script.) Asks for pm-seller, pm-agent and pm-owner passwords once each.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+exec > >(tee -a "deployments/v4-demo-$(date +%Y%m%d-%H%M%S).log") 2>&1
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
 LASNA=https://lasna-rpc.rnk.dev/
 rpc() { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;

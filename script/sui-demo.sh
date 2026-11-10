@@ -7,6 +7,7 @@
 # Asks for pm-agent-sui, pm-seller (attester) and pm-owner passwords once each.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+exec > >(tee -a "deployments/sui-demo-$(date +%Y%m%d-%H%M%S).log") 2>&1
 source script/lib.sh
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
 

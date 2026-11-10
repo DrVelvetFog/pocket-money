@@ -4,6 +4,7 @@
 # agent's next purchase goes through. Asks for pm-seller, pm-agent and pm-owner passwords once each.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+exec > >(tee -a "deployments/raise-demo-$(date +%Y%m%d-%H%M%S).log") 2>&1
 source script/lib.sh
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
 PORT=${PORT:-4021}; SMALL=${SMALL:-200000}; RAISE=${RAISE:-300000}; NORMAL=${NORMAL:-3000000}

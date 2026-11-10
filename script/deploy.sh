@@ -6,6 +6,8 @@
 # this run (mode 600), and deletes it on exit.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+mkdir -p deployments
+exec > >(tee -a "deployments/deploy-$(date +%Y%m%d-%H%M%S).log") 2>&1
 
 LASNA=https://lasna-rpc.rnk.dev/
 rpc()   { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;
@@ -30,7 +32,7 @@ LOW_WATER=${LOW_WATER:-3000000}    # rebalance a vault below $3 ...
 TARGET=${TARGET:-4000000}          # ... back up to $4
 MAX_FEE=${MAX_FEE:-1000}           # CCTP fast-transfer fee ceiling ($0.001)
 REBALANCE_CAP=${REBALANCE_CAP:-5000000}
-PM_FUND=${PM_FUND:-2.5ether}       # lREACT for reactive fees
+PM_FUND=${PM_FUND:-2.2ether}       # lREACT for reactive fees
 VAULT_ETH=${VAULT_ETH:-0.0002ether}
 AGENT_ETH=${AGENT_ETH:-0.00002ether} # until the x402 seller: plain transfers need gas
 
@@ -66,16 +68,20 @@ fi
 
 if [[ -z "${RESUME:-}" && -f $OUT ]]; then
   step "0b retire the previous deployment (vaults migrate() to the owner, guard returns its lREACT)"
-  (
-    source $OUT
-    for c in "${CHAINS[@]}"; do
-      V=$(eval echo \${VAULT_$c:-}); [[ -z "$V" ]] && continue
-      send $V "migrate(address)" $OWNER --rpc-url $(rpc $c)
-    done
-    bal=$(cast balance $PM --rpc-url $LASNA)
-    [[ "$bal" != "0" ]] && send $PM "withdraw(address,uint256)" $OWNER $bal --rpc-url $LASNA
-    true
-  )
+  PREV_PM=$(grep '^PM=' $OUT | cut -d= -f2)
+  for c in "${CHAINS[@]}"; do
+    V=$(grep "^VAULT_$c=" $OUT | cut -d= -f2); [[ -z "$V" ]] && continue
+    u=$(cast call $(usdc $c) "balanceOf(address)(uint256)" $V --rpc-url $(rpc $c) | num)
+    e=$(cast balance $V --rpc-url $(rpc $c))
+    if [[ "$u" != "0" || "$e" != "0" ]]; then send $V "migrate(address)" $OWNER --rpc-url $(rpc $c) || exit 1
+    else echo "   vault on $c already empty"; fi
+  done
+  # The old guard keeps reacting (and paying fees) while we retire it, so leave a margin.
+  bal=$(cast balance $PREV_PM --rpc-url $LASNA)
+  amt=$(echo "$bal - 50000000000000000" | bc)
+  if [[ "${amt:0:1}" != "-" && "$amt" != "0" ]]; then
+    send $PREV_PM "withdraw(address,uint256)" $OWNER $amt --rpc-url $LASNA || exit 1
+  fi
   mkdir -p deployments/archive
   mv $OUT deployments/archive/testnet-$(date +%Y%m%d-%H%M%S).env
 fi
