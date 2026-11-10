@@ -231,3 +231,9 @@ All of Pocket Money's code was written during the buildathon. Prior work enters 
 - Foundry's `forge-std`
 
 Circle's USDC and CCTP are the on-chain dependencies.
+
+**Live dashboard:** [pocket-money-passbook.netlify.app](https://pocket-money-passbook.netlify.app)
+
+## License
+
+MIT © 2026 Tony Jagodka. See [`LICENSE`](LICENSE).
