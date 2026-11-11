@@ -401,7 +401,57 @@ Owner transactions on Lasna:
 - `script/verify.sh` VERIFIED 9 receipts, head unchanged
 - the go-live preflight passes. It now tests that the Keychain passwords really open the keystores; before, it only checked that an entry existed, and it had reported ready while the Keychain still held the old seller's password
 
-**Not re-run:** the Sui and Solana demos against the new shop addresses. Earlier sections of this file show the old addresses, as they were at the time.
+**Re-run afterwards:** the daily job and the Sui and Solana demos, all against the new keys (next section). Earlier sections of this file show the old addresses, as they were at the time.
 
 Logs: `deployments/rotate-seller2-*.log`, `deployments/rotate-seller-*.log`.
+
+---
+
+## After the rotation: daily job, Sui and Solana re-run (2026-11-11)
+
+Everything below used the new seller key, the new inbox and the registries.
+
+**The unattended daily job, bare environment** (`env -i` with only HOME, USER and `PATH=/usr/bin:/bin`, like launchd). No prompts.
+
+| Chain | x402 settlement (sent by the new seller A) | Top-up | Mirror | Verifier |
+|---|---|---|---|---|
+| Base Sepolia | `0x2311603f2c9586f3606a0e9e0356673f53b35e8fd6bb17133d81bde5ed08bfdf` | `0x42306a3b92d644e806c44daaa2e1c514cbed6bb894d96292e238998723bcf81f` | $2.10 → $2.00 | VERIFIED, 10 receipts |
+
+The agent was back to its $1.00 float and the seller and relayer stopped. Record: `deployments/daily/2026-11-11-dryrun-bare-env.json`.
+
+**Sui** (`script/sui-demo.sh`). The attester ran as the new seller A against the new inbox.
+
+| Step | Where | Tx |
+|---|---|---|
+| agent pays the new Sui shop $0.10 | Sui testnet | `CdxTaLWeMAmu6vQU3zmYNLCLnJhj9khC1YxDXTYih432` |
+| attester reports it | Base Sepolia inbox | `0x37685c5582c7773b1f1212367a65e1f64c530662d8fe59c194f9212cab58ebf0` |
+| guard books it | Lasna | `0x63f362b9d508a2f4f0da7e86d2423b8b4df2afcea3645be140fd138adeea6462` |
+| agent pays a stray address $0.01 | Sui testnet | `Ay3Qt7f8Nnre7GhBCdXXxkPqjbWbPCmXdhsPmamampVw` |
+| attester reports it | Base Sepolia inbox | `0x1f5ec1b50ae2d16bbc1b91f4c4bb572612e03915fca84a9bad708c74c7bcd563` |
+| guard quarantines the agent | Lasna | `0x281e269c34040144953032717e8a8720ac86cda2628b9f0e2455255c1a8bea5b` |
+| frozen on Base Sepolia | Base Sepolia | `0xa95b2bc9b26d6e50034b379156d05e4c8a00ac460444fca0d115ad3d3b5be29c` |
+| frozen on Unichain Sepolia | Unichain Sepolia | `0xb2d8e677895ad9f7a1f6476aa5a1e6b85a7dda53b785f42ddf38fa7d40530535` |
+| frozen on Ethereum Sepolia | Ethereum Sepolia | `0x8a16daa0c1c50af10093ae1e81a4112a09a38a0e267c50b56449ad5ed2b2edd3` |
+
+After the shop payment the mirrors on Base and Unichain read $1.90 (from $2.00). Ethereum Sepolia still read $2.00 when the script looked, the one-block lag noted under "Limits"; it had caught up by the next step.
+
+**Solana** (`script/solana-demo.sh`).
+
+| Step | Where | Tx |
+|---|---|---|
+| agent pays the new Solana shop $0.10 | Solana devnet | `CGASuMQNUccu52EH995n8NjChcJxs8vmsMA5y4sLT6tRCeMwBA1M9YSEHznQSLzzd7Eua9qTckEsSSNyx6hDeCW` |
+| attester reports it | Base Sepolia inbox | `0xa11eccfb37b19003b6caec5929800a55823570e287f1a1a13491b7adf09152c5` |
+| guard books it | Lasna | `0x230d9915484e9c390c07a98b96fdc6e1660f67cd937f7a46b53df98cdd51d88a` |
+| agent pays a stray address $0.01 | Solana devnet | `3eioALVUoBKX8G4nsmPmpd8JbB3xDGoubyeoETraX2NxCBoxa7CeshPqsqsGuayMAUg1Bsyq6Fh11AzJH1ASL8Dj` |
+| attester reports it | Base Sepolia inbox | `0xf70f289531dac9941209b0f637412d8919dacd925eaaae4e03aa7a047d75e4b5` |
+| guard quarantines the agent | Lasna | `0x0501920b5e873d8d80564a12ccca6aaf83ac52ced38ddb68472b23c6907d8492` |
+| frozen on Base Sepolia | Base Sepolia | `0x98b9e5bf5fd1f30b90fd28d3fa850837310ccb03d4de2d14388c7c7ba3b9fc60` |
+| frozen on Unichain Sepolia | Unichain Sepolia | `0x4917ea84a4c351fe80794d25c90e7c971b3874a4a89b42411a65dacf4296e95c` |
+| frozen on Ethereum Sepolia | Ethereum Sepolia | `0x95a75bbfb1ea57649eaf4b03b7905ed57e4a36c6423bfdc285fb73da7443f4da` |
+
+All three mirrors read $1.79 (from $1.89) after the shop payment.
+
+**Afterwards:** both runs ended with the owner's reset (resume on the guard, unfreeze on each vault). `script/verify.sh` VERIFIED 14 receipts, head `0xc41a38cd7e0903edb00eb8ea705c48921a1968daf453c4ddb899323c2be55799`, and the go-live preflight passes with the guard at 3.31 lREACT.
+
+Logs: `deployments/sui-demo-20261111-073349.log`, `deployments/solana-demo-20261111-073819.log`, and each run's `-attester.log`.
 

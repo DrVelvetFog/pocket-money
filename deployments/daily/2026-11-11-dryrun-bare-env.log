@@ -1,0 +1,22 @@
+== 2026-11-11: buying the morning report on 84532 (mirror says 2100000 left)
+{
+  "day": "2026-11-11",
+  "chain": 84532,
+  "report": {
+    "asOf": "2026-11-11T13:31:05.840Z",
+    "btcUsd": 73745.375,
+    "breakevenBand": [
+      95000,
+      102000
+    ],
+    "gapToLow": -21255,
+    "gapToHigh": -28255,
+    "verdict": "below band"
+  },
+  "settlement": "0x2311603f2c9586f3606a0e9e0356673f53b35e8fd6bb17133d81bde5ed08bfdf",
+  "topUp": "0x42306a3b92d644e806c44daaa2e1c514cbed6bb894d96292e238998723bcf81f",
+  "mirrorBefore": "2100000",
+  "mirrorAfter": "2000000",
+  "refusal": "",
+  "verify": "VERIFIED: 10 receipts from block 8015521; rebuilt head 0x642220230d10cca045c31a18d0919fa0bcbfe371ba546cf7332c1cb9392cff0b guard says 10 receipts, head 0x642220230d10cca045c31a18d0919fa0bcbfe371ba546cf7332c1cb9392cff0b "
+}
