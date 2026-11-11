@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One-time: fund the pm-seller testnet key with settlement gas on each chain and add it to the
 # guard's approved payees. Run after `cast wallet new ~/.foundry/keystores pm-seller`.
+#   script/setup-seller.sh [address]     default: SELLER from deployments/wallets.env
 # Asks for the pm-owner password once (mode-600 temp file, deleted on exit).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,6 +13,7 @@ rpc() { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;
 gas() { case $1 in 84532) echo 0.00005ether;; 1301) echo 0.0002ether;; 11155111) echo 0.0005ether;; esac; }
 
 source deployments/wallets.env  # SELLER= is added after `cast wallet new` prints the address
+SELLER=${1:-${SELLER:-}}
 [[ -n "${SELLER:-}" ]] || { echo "add SELLER=<address> to deployments/wallets.env first" >&2; exit 1; }
 echo "seller $SELLER"
 
