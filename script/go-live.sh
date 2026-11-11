@@ -28,7 +28,8 @@ for c in "${CHAINS[@]}"; do
   check "nothing frozen on $c" "[[ \$(cast call $V 'frozen()(bool)' --rpc-url $(rpc $c)) == false && \$(cast call $V 'agentFrozen(address)(bool)' $AGENT --rpc-url $(rpc $c)) == false ]]"
 done
 check "agent not quarantined, no panic" "[[ \$(cast call $PM 'panicked()(bool)' --rpc-url $LASNA) == false ]]"
-check "Keychain has pm-agent and pm-seller" "security find-generic-password -s pocket-money -a pm-agent >/dev/null 2>&1 && security find-generic-password -s pocket-money -a pm-seller >/dev/null 2>&1"
+opens() { local k; k=$(security find-generic-password -s pocket-money -a "$1" -w 2>/dev/null) && CAST_UNSAFE_PASSWORD="$k" cast wallet decrypt-keystore "$1" >/dev/null 2>&1; }
+check "Keychain passwords open the pm-agent and pm-seller keystores" "opens pm-agent && opens pm-seller"
 check "receipt chain verifies" "script/verify.sh >/dev/null 2>&1"
 [[ $MODE == --check ]] && { (( ok )) && echo "ready." || echo "not ready."; exit $(( 1 - ok )); }
 
