@@ -4,3 +4,5 @@ broadcast/
 .env
 *.key
 .netlify/
+.mine
+.watch-state*

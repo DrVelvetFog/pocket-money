@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# Pocket Money on testnet, start to finish, for your own agent:
+#   keys -> funding (it waits while you use two faucets) -> guard, vaults and registries
+#   -> one real x402 purchase per chain, with the transaction for every step of the loop.
+# Testnet only. Your keys stay in Foundry keystores on this machine; nothing here holds your funds.
+#
+#   ./quickstart          run, or pick up where the last run stopped
+#   ./quickstart --plan   show what is done and what is missing; sends nothing
+#   ./quickstart check    health check of a finished setup (same as script/doctor.sh)
+#
+# Chains: Base Sepolia + Ethereum Sepolia by default (one ETH faucet covers both). For all three:
+#   CHAINS="84532 1301 11155111" ./quickstart      (you fund Unichain Sepolia ETH yourself)
+set -euo pipefail
+cd "$(dirname "$0")"
+MODE=${1:-run}
+[[ $MODE == check ]] && exec script/doctor.sh
+WANT_CHAINS=(${CHAINS:-84532 11155111}); unset CHAINS
+source script/lib.sh
+KS=${FOUNDRY_KEYSTORES:-$HOME/.foundry/keystores}
+SEPOLIA=$(rpc 11155111)
+LREACT_FAUCET=0x9b9BB25f1A81078C544C829c5EB7822d747Cf434   # Reactive: Ethereum Sepolia ETH -> lREACT, 1 : 100
+BASE_BRIDGE=0xfd0Bf71F60660E2f608ed56e1659C450eB113120     # Base Sepolia's L1StandardBridge on Ethereum Sepolia
+LREACT_BUY=${LREACT_BUY:-0.03}; BRIDGE_ETH=${BRIDGE_ETH:-0.002}
+NEED_SEPOLIA_ETH=0.036; NEED_USDC=5000000                 # per chain: $4 vault + $1 float
+name() { case $1 in 84532) echo "Base Sepolia";; 1301) echo "Unichain Sepolia";; 11155111) echo "Ethereum Sepolia";; esac; }
+say() { echo; echo "== $*"; }
+ge() { [[ $(echo "$1 >= $2" | bc) == 1 ]]; }
+bal() { cast balance $1 --rpc-url $(rpc $2) --ether 2>/dev/null || echo 0; }
+ubal() { cast call $(usdc $2) "balanceOf(address)(uint256)" $1 --rpc-url $(rpc $2) 2>/dev/null | cut -d' ' -f1 || echo 0; }
+have() { grep -q "^$1=" "$2" 2>/dev/null; }
+val() { grep "^$1=" "$2" 2>/dev/null | cut -d= -f2; }
+plan() { [[ $MODE == --plan ]]; }
+
+say "0. tools"
+missing=0
+for t in forge cast node jq bc git; do command -v $t >/dev/null || { echo "  ✗ $t is not installed"; missing=1; }; done
+(( missing )) && { echo "Install Foundry (https://getfoundry.sh), Node 20+ and jq, then run this again."; exit 1; }
+(( $(node -p 'process.versions.node.split(".")[0]') >= 20 )) || { echo "  ✗ Node 20 or newer is needed"; exit 1; }
+echo "  ✓ forge, cast, node, jq"
+if [[ ! -f lib/forge-std/src/Test.sol ]]; then plan && echo "  - would fetch the contract libraries" || git submodule update --init --recursive; fi
+if [[ ! -d agent/node_modules ]]; then plan && echo "  - would install the agent's packages" || (cd agent && npm ci --silent); fi
+
+# The repository ships the author's own deployment as a worked example. A deployment is yours only
+# if this machine made it (deployments/.mine holds its owner address).
+MINE=deployments/.mine
+if [[ -f deployments/wallets.env && ! -f $MINE ]]; then
+  shipped=$(val OWNER deployments/wallets.env)
+  say "this checkout describes a deployment owned by $shipped"
+  if plan; then
+    echo "  - a run would ask whether that is you; if not, it sets the example aside, creates your"
+    echo "    three keys (pm-owner, pm-agent, pm-seller) and walks you through funding and deploy"
+    exit 0
+  else
+    read -r -p "Is that your own address? [y/N] " a
+    if [[ $a == y || $a == Y ]]; then echo $shipped > $MINE
+    else
+      mkdir -p deployments/archive; stamp=$(date +%Y%m%d-%H%M%S)
+      for f in wallets.env testnet.env; do [[ -f deployments/$f ]] && mv deployments/$f deployments/archive/example-$stamp-$f; done
+      echo "  set the example aside in deployments/archive/"
+    fi
+  fi
+fi
+
+say "1. keys (testnet only, encrypted in $KS)"
+addr_of() { # addr_of <keystore name> <NAME in wallets.env>
+  have $2 deployments/wallets.env && { val $2 deployments/wallets.env; return; }
+  local a
+  if [[ -f $KS/$1 ]]; then
+    echo "  $1 exists; enter its password to read the address" >&2
+    a=$(cast wallet address --account $1)
+  else
+    echo "  creating $1: choose a password (you'll be asked for it during setup)" >&2
+    a=$(cast wallet new $KS $1 | tee /dev/stderr | grep -oE '0x[0-9a-fA-F]{40}' | tail -1)
+  fi
+  echo "$2=$a" >> deployments/wallets.env; echo $a
+}
+if plan; then
+  for k in pm-owner pm-agent pm-seller; do [[ -f $KS/$k ]] && echo "  ✓ $k" || echo "  - would create $k"; done
+  [[ -f deployments/wallets.env ]] || { echo; echo "Nothing else can be checked until the keys exist. Run ./quickstart."; exit 0; }
+  OWNER=$(val OWNER deployments/wallets.env); AGENT=$(val AGENT deployments/wallets.env); SELLER=$(val SELLER deployments/wallets.env)
+else
+  mkdir -p deployments "$KS"
+  OWNER=$(addr_of pm-owner OWNER)    # sets the limits; keep it off the machine your agent runs on
+  AGENT=$(addr_of pm-agent AGENT)    # the agent's spending key; only ever holds the float
+  SELLER=$(addr_of pm-seller SELLER) # a demo shop the agent buys from, so you can watch a full loop
+  echo $OWNER > $MINE
+fi
+echo "  owner  $OWNER"; echo "  agent  $AGENT"; echo "  seller $SELLER"
+
+say "2. funding the owner ($OWNER)"
+funded() {
+  local ok=0 c
+  if [[ -f deployments/testnet.env ]] && have PM deployments/testnet.env; then return 0; fi
+  local lre; lre=$(cast balance $OWNER --rpc-url $LASNA --ether 2>/dev/null || echo 0)
+  if ge $lre 2.5; then echo "  ✓ lREACT $lre"
+  elif ge $(bal $OWNER 11155111) $NEED_SEPOLIA_ETH; then echo "  ✓ Ethereum Sepolia ETH $(bal $OWNER 11155111)"
+  else echo "  ✗ Ethereum Sepolia ETH: have $(bal $OWNER 11155111), need $NEED_SEPOLIA_ETH"; ok=1; fi
+  for c in "${WANT_CHAINS[@]}"; do
+    local u; u=$(ubal $OWNER $c)
+    (( u >= NEED_USDC )) && echo "  ✓ USDC on $(name $c): $u units" || { echo "  ✗ USDC on $(name $c): have $u units, need $NEED_USDC (\$5)"; ok=1; }
+    [[ $c == 1301 ]] && { ge $(bal $OWNER 1301) 0.0006 && echo "  ✓ Unichain Sepolia ETH" || { echo "  ✗ Unichain Sepolia ETH: have $(bal $OWNER 1301), need 0.0006"; ok=1; }; }
+  done
+  return $ok
+}
+if ! funded; then
+  cat <<EOF
+
+  Send testnet funds to the OWNER address above:
+    1. Ethereum Sepolia ETH (0.05 covers everything):  https://cloud.google.com/application/web3/faucet/ethereum/sepolia
+    2. Testnet USDC on each chain listed above: https://faucet.circle.com
+  Base Sepolia gas is bridged from your Sepolia ETH for you, and lREACT (Reactive's gas) is bought with it.
+EOF
+  plan && exit 0
+  echo; echo "  Waiting. Checking again every 20 seconds (Ctrl-C is safe; run ./quickstart again later)."
+  until funded >/dev/null; do sleep 20; done
+  funded
+fi
+if plan; then # --plan never goes past this line: everything below sends transactions
+  echo
+  if have PM deployments/testnet.env 2>/dev/null; then echo "Already deployed (guard $(val PM deployments/testnet.env)). Health check: ./quickstart check"
+  else echo "Funded. A run would now buy lREACT, bridge gas to Base, deploy, and make a test purchase."; fi
+  exit 0
+fi
+
+if ! have PM deployments/testnet.env 2>/dev/null; then
+  source script/lib.sh; owner_init; trap 'rm -rf "$OWNER_PW_DIR"' EXIT
+  if ! ge $(cast balance $OWNER --rpc-url $LASNA --ether) 2.5; then
+    say "3. buying lREACT with $LREACT_BUY Sepolia ETH"
+    owner $LREACT_FAUCET "request(address)" $OWNER --value ${LREACT_BUY}ether --rpc-url $SEPOLIA
+    echo "  waiting for it on Reactive Lasna..."
+    until ge $(cast balance $OWNER --rpc-url $LASNA --ether) 2.5; do sleep 6; done
+  fi
+  echo "  ✓ lREACT $(cast balance $OWNER --rpc-url $LASNA --ether)"
+  if [[ " ${WANT_CHAINS[*]} " == *" 84532 "* ]] && ! ge $(bal $OWNER 84532) 0.0006; then
+    say "3b. bridging $BRIDGE_ETH ETH to Base Sepolia for gas (takes a couple of minutes)"
+    owner $BASE_BRIDGE "depositETH(uint32,bytes)" 200000 0x --value ${BRIDGE_ETH}ether --rpc-url $SEPOLIA
+    until ge $(bal $OWNER 84532) 0.0006; do sleep 10; done
+    echo "  ✓ Base Sepolia ETH $(bal $OWNER 84532)"
+  fi
+  rm -rf "$OWNER_PW_DIR"; trap - EXIT
+fi
+
+say "4. guard on Reactive, a vault on each chain (asks for the pm-owner password)"
+export CHAINS="${WANT_CHAINS[*]}" VAULT_USDC_BASE=4000000 VAULT_USDC_UNI=4000000 VAULT_USDC_ETH=4000000
+if have PM deployments/testnet.env 2>/dev/null; then RESUME=1 script/deploy.sh; else script/deploy.sh; fi
+unset CHAINS; source script/lib.sh; set -a; source deployments/testnet.env; set +a
+
+say "5. the demo shop: settlement gas, and approval as a payee"
+low=0; for c in "${CHAINS[@]}"; do ge $(bal $SELLER $c) 0.00003 || low=1; done
+(( low )) && script/setup-seller.sh || echo "  ✓ already funded"
+
+say "6. registries: any x402 seller can now find your agent's limit (asks for pm-agent and pm-owner)"
+script/deploy-registry.sh
+
+say "7. a real purchase on each chain (asks for pm-seller and pm-agent)"
+script/x402-demo.sh "${CHAINS[@]}"
+
+script/dashboard-config.sh >/dev/null
+cat <<EOF
+
+================================================================
+Done. Your agent has a \$3/day allowance across ${#CHAINS[@]} chains and holds a \$1 float on each.
+
+  See it:        cd dashboard && python3 -m http.server 4173    then open http://localhost:4173
+  Check it:      ./quickstart check
+  Get alerts:    script/watch.sh            (frozen agent, panic, low guard balance, low vault)
+  Stop it all:   cast send <a vault> "panic()" --account pm-owner --rpc-url <that chain>
+  Change limits, add payees, run it daily: see "Using it" in the README.
+
+Your addresses and contracts are in deployments/wallets.env and deployments/testnet.env.
+EOF

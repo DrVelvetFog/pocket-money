@@ -6,7 +6,9 @@ rpc()  { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;
 usdc() { case $1 in 84532) echo 0x036CbD53842c5426634e7929541eC2318f3dCF7e;;
                    1301) echo 0x31d0220469e10c4E71834a79b1f276d740d3768F;;
                    11155111) echo 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;; esac; }
-CHAINS=(84532 1301 11155111)
+# The chains this deployment has a vault on (all three unless you deployed fewer).
+CHAINS=($({ grep -oE '^VAULT_[0-9]+' deployments/testnet.env 2>/dev/null || true; } | cut -d_ -f2))
+(( ${#CHAINS[@]} )) || CHAINS=(84532 1301 11155111)
 
 # key <keystore name>: decrypt a testnet key into stdout (captured by the caller, never shown)
 key() {

@@ -162,37 +162,48 @@ Earlier versions were retired on-chain with the vaults' logged `migrate()`, so t
 
 ## Run your own
 
-**1. Tools:** Foundry, Node 20+, and `jq`.
+On testnet, for your own agent. Your keys stay in Foundry keystores on your machine and the contracts are yours; nothing in this repo holds your funds.
 
-**2. Testnet-only keystores:** create one per role with `cast wallet new ~/.foundry/keystores <name>`:
-- `pm-owner`
-- `pm-agent`
-- `pm-seller`
-- `pm-seller2` (optional, for the two-seller registry demo)
-- `pm-agent-sui` (optional)
-- `pm-agent-sol` (optional)
+```bash
+git clone --recurse-submodules https://github.com/DrVelvetFog/pocket-money && cd pocket-money
+./quickstart
+```
 
-**3. Fund them** (see [`deployments/EVIDENCE.md`](deployments/EVIDENCE.md) for which faucets worked):
-- a little Base Sepolia ETH
-- Ethereum Sepolia ETH, which `script/deploy.sh` swaps for lREACT through Reactive's faucet contract
-- Circle test USDC on each chain
+You need Foundry, Node 20+ and `jq`. `./quickstart` then:
 
-**4. Deploy and run:**
+1. creates three testnet keystores: `pm-owner` (sets the limits), `pm-agent` (the agent's spending key) and `pm-seller` (a demo shop to buy from)
+2. waits while you use two faucets: Ethereum Sepolia ETH and Circle test USDC. It buys lREACT and bridges Base Sepolia gas for you
+3. deploys your guard on Reactive, a vault on Base Sepolia and Ethereum Sepolia, and a registry on each
+4. has the agent make one real x402 purchase per chain and prints the origin, Reactive and top-up transaction for each
+
+It can be stopped and run again; it picks up where it left off. `./quickstart --plan` shows what is done and what is missing, and sends nothing. For all three chains: `CHAINS="84532 1301 11155111" ./quickstart` (you fund Unichain Sepolia gas yourself).
+
+The repository ships the author's deployment as a worked example. `./quickstart` asks before setting it aside for yours.
+
+## Using it
+
+| You want to | Do this |
+|---|---|
+| See the passbook | `cd dashboard && python3 -m http.server 4173`, then open `http://localhost:4173` |
+| Check everything is healthy | `./quickstart check` (read-only; each problem comes with its fix) |
+| Be told when something needs you | `script/watch.sh` (frozen or quarantined agent, panic, guard low on lREACT, vault low on USDC or gas). Set `ALERT_URL` to an [ntfy](https://ntfy.sh) topic to get it on your phone |
+| Change the daily allowance | `cast send $PM "setAgent(address,uint256)" $AGENT <units> --account pm-owner --rpc-url https://lasna-rpc.rnk.dev/` (6 decimals: `3000000` is $3) |
+| Approve someone the agent may pay | `cast send $PM "setPayee(address,bool)" <address> true ...` Paying anyone else freezes the agent everywhere |
+| Give the agent a one-day raise | `cast send <any vault> "approveRaise(address,uint256)" $AGENT <units> ...` on whichever chain is handy |
+| Stop everything | `cast send <any vault> "panic()" --account pm-owner --rpc-url <that chain>` |
+| Recover after a freeze | `script/drill.sh` shows each case and its reset |
+| Replace a leaked seller key | `script/rotate-seller.sh` |
+| Run the agent's job every morning, unattended | `script/keychain-setup.sh`, then `script/go-live.sh` (macOS) |
+
+`$PM`, `$AGENT` and the vault addresses are in `deployments/testnet.env` and `deployments/wallets.env`.
+
+**Your own agent instead of the demo one:** any x402 client works. Give it the `pm-agent` key and nothing else. It needs no ETH: it signs, and the seller settles. See [`agent/src/agent.ts`](agent/src/agent.ts) (40 lines).
+
+**Step by step, by hand:**
 - `script/deploy.sh` deploys the guard, the vaults and the inbox, and wires everything up.
 - `script/setup-seller.sh` funds the seller and approves it as a payee.
 - `script/deploy-registry.sh` deploys a registry on each chain and binds the agent to its vault.
-- Demos:
-  - `script/x402-demo.sh`: x402 payments on every chain
-  - `script/v4-demo.sh`: the mirror refusal and a CCTP refill
-  - `script/registry-demo.sh`: two sellers that are given only the registry addresses
-  - `script/raise-demo.sh`
-  - `script/sui-demo.sh`
-  - `script/solana-demo.sh`
-  - `script/drill.sh stray|stolen|panic|dry`
-
-**5. Unattended:**
-- `script/keychain-setup.sh` stores the agent's and seller's keystore passwords in the macOS Keychain.
-- [`deploy/com.uigstudios.pocketmoney.daily.plist`](deploy/com.uigstudios.pocketmoney.daily.plist) runs `script/daily.sh` every morning.
+- Demos: `script/x402-demo.sh`, `script/v4-demo.sh`, `script/registry-demo.sh`, `script/raise-demo.sh`, `script/sui-demo.sh`, `script/solana-demo.sh`, `script/drill.sh stray|stolen|panic|dry`
 
 **Testing:**
 

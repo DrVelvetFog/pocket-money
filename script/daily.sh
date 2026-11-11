@@ -23,7 +23,7 @@ SELLER_PK=$(unlock pm-seller); AGENT_PK=$(unlock pm-agent); export SELLER_PK AGE
 trap 'pkill -f "tsx src/seller.ts" 2>/dev/null; pkill -f "tsx src/relayer.ts" 2>/dev/null; true' EXIT
 for _ in $(seq 1 60); do curl -sf localhost:$PORT/health >/dev/null && break; sleep 1; done
 
-idx=$(( 10#$(date +%j) % 3 )); CHAIN=${CHAIN:-${CHAINS[$idx]}}
+idx=$(( 10#$(date +%j) % ${#CHAINS[@]} )); CHAIN=${CHAIN:-${CHAINS[$idx]}}
 before=$(left $CHAIN); cf=$(cast block-number --rpc-url $(rpc $CHAIN)); V=$(eval echo \$VAULT_$CHAIN)
 echo "== $DAY: buying the morning report on $CHAIN (mirror says $before left)"
 buy=$( (cd agent && SELLER_URL=http://localhost:$PORT npx tsx src/agent.ts $CHAIN) 2>&1 || true)

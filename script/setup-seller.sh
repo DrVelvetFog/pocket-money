@@ -22,7 +22,7 @@ read -rs -p "pm-owner keystore password: " p; echo; printf '%s' "$p" > "$d/o"; u
 send() { for i in 1 2 3 4; do out=$(cast send "$@" --account pm-owner --password-file "$d/o" --json 2>&1) &&
   { jq -r '"   tx \(.transactionHash) status \(.status)"' <<<"$out"; return 0; }; sleep 4; done; echo "$out" >&2; return 1; }
 
-for c in 84532 1301 11155111; do
+for c in $(grep -oE '^VAULT_[0-9]+' deployments/testnet.env | cut -d_ -f2); do
   echo "== settlement gas on $c"
   send $SELLER --value $(gas $c) --rpc-url $(rpc $c)
 done
