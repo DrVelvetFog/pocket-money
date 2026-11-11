@@ -49,7 +49,7 @@ case $mode in
     echo "agent pays $amount on $(name $c) to $to"
     o=$(cast send $(usdc $c) "transfer(address,uint256)" $to $amount --rpc-url $(rpc $c) --account pm-agent ${PM_AGENT_PW_FILE:+--password-file $PM_AGENT_PW_FILE} --json)
     echo "origin    $(jq -r .transactionHash <<<"$o")  block $(jq -r .blockNumber <<<"$o" | cast to-dec)  ($(name $c))"
-    read -r tx _ <<<"$(wait_log $LASNA $lasna_from $PM 'Spent(address indexed,uint256 indexed,address indexed,uint256,uint256,uint256,bytes32)')"
+    read -r tx _ <<<"$(wait_log $LASNA $lasna_from $PM 'Spent(address indexed,uint256 indexed,bytes32 indexed,uint256,uint256,uint256,bytes32)')"
     echo "reactive  $tx  (Lasna)"
     if [[ $mode == spend ]]; then
       read -r tx b <<<"$(wait_log $(rpc $c) $(from_of $c) $(vault $c) 'TopUp(address indexed,uint64 indexed,uint256,uint256,uint256)')"

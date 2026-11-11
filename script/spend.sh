@@ -21,7 +21,7 @@ echo "origin   $origin_tx"
 
 for _ in $(seq 1 60); do
   spent=$(cast logs --from-block $lasna_from --address $PM \
-    'Spent(uint256 indexed,address indexed,uint256,uint256,uint256,bytes32)' --rpc-url $LASNA --json)
+    'Spent(address indexed,uint256 indexed,bytes32 indexed,uint256,uint256,uint256,bytes32)' --rpc-url $LASNA --json)
   [[ $(jq length <<<"$spent") -gt 0 ]] && break; sleep 1
 done
 echo "reactive $(jq -r '.[-1].transactionHash' <<<"$spent")"

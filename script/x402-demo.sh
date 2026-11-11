@@ -57,7 +57,7 @@ for c in "${CHAINS[@]}"; do
   from=$(cast tx $st from --rpc-url $R)
   echo "origin    $st  (sent by $from — the seller, not the agent)"
   echo "agent nonce before/after: $agent_nonce/$(cast nonce $AGENT --rpc-url $R)  (unchanged = agent sent nothing)"
-  read -r tx _ <<<"$(wait_log $LASNA $lf $PM 'Spent(address indexed,uint256 indexed,address indexed,uint256,uint256,uint256,bytes32)')"
+  read -r tx _ <<<"$(wait_log $LASNA $lf $PM 'Spent(address indexed,uint256 indexed,bytes32 indexed,uint256,uint256,uint256,bytes32)')"
   echo "reactive  $tx  (Lasna)"
   read -r tx b <<<"$(wait_log $R $cf $V 'TopUp(address indexed,uint64 indexed,uint256,uint256,uint256)')"
   echo "callback  $tx  block $( [[ $b == - ]] && echo - || cast to-dec $b)"
