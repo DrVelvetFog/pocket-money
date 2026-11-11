@@ -153,7 +153,7 @@ python3 -m http.server 4173 --directory dashboard
 | Vault · Base Sepolia | `0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5` |
 | Vault · Unichain Sepolia | `0x9408E947d6654417BAcF45548070A0453690AdA3` |
 | Vault · Ethereum Sepolia | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
-| SpendInbox · Base Sepolia | `0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6` |
+| SpendInbox · Base Sepolia | `0xD7c7732520FCb454673aB42229Eb60356E96A8A8` |
 | Registry · Base Sepolia | `0xD48A658E4862682FA47C57464E52Cfa3b376E3e1` |
 | Registry · Unichain Sepolia | `0x77BE935e39274963E18E32567e980387aAAae6b8` |
 | Registry · Ethereum Sepolia | `0x51954B6F45739d549644B292DC42b9f63BdFd312` |

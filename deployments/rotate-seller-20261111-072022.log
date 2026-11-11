@@ -1,0 +1,29 @@
+pm-seller keystore password: 
+SELLER: 0xB8232D5437Aa124c235c8321dec2d1003863cB65 -> 0xF5779c263B87d0310315742cd89598E06297b3b2
+pm-owner keystore password: 
+== settlement gas on 84532
+   owner tx 0xea0a977d013629aaef36f74749cc045efb45b5ba40bb91df424bcb46a62de8f8
+== settlement gas on 1301
+   owner tx 0x0744948e77cc93f5ca3ccb88176d7589f19fd36f188e27a87194448c48e4814c
+== settlement gas on 11155111
+   owner tx 0x3f368f5c48bca3cd341f9f11db8a04de952c0394a5a39f45eb4ac985abac3e40
+== guard: approve the new payee, un-approve the old one
+   owner tx 0x788e2a905dbe76aa3ed4a0a3dc1234f278b56816abd16ccfedc1d2d60cdc900e
+   owner tx 0x1d12c31c11789fe864bfb664d483414e2acfaf77d411f47f4102070ff1ba732d
+== guard: SUI_SHOP 0x2a316b4e56041b8c237f985a823af7b8054cccd7cc73200055cb220fc857ff33 -> 0xc1f5e8589dfcaf0e89005e6945fc4265b326222f25c444c438c58e9d97abe1c2
+   owner tx 0x0edfbfe6319cfdc2667da9cf91193eb96ab19005f3ec36af9c4e030d0d35ac78
+   owner tx 0xf707bbef5d2174ce70b9b848ca482416b70103d317a0829278d42b2ddafe6c26
+== guard: SOL_SHOP_ID 0x8d6548338301e8d2c785828cb219f8e9e7dc66c491b70145a16e90f4748bfeea -> 0xadbfd2ae5a02b82a4fcae61549025a7a0eaa197931fcd9739c6dacccf212006f
+   owner tx 0xadb96935d12c276c4976cf302d34fc1aedf9fafb35ea301289812b7653b22031
+   owner tx 0x7b9f166304512f68d3b7325c1142d8b89e47db6716afe5dda7439c8b30f6fcb1
+== new SpendInbox on Base Sepolia, attester = the new key
+   inbox 0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6 -> 0xD7c7732520FCb454673aB42229Eb60356E96A8A8
+   owner tx 0x3439305e9597329bb1f6742a6b38538d38baa484e773c337da73ea1f2bf2aaa5
+wrote dashboard/config.js (fromBlock 8015521)
+
+== check
+  ✓ new payee approved
+  ✓ old payee revoked
+  ✓ guard reads the new inbox
+  ✓ new inbox's attester is the new key
+  ✗ the Keychain password does NOT open the new pm-seller keystore: run script/keychain-setup.sh

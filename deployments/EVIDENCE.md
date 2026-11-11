@@ -369,3 +369,39 @@ On each, `controllerOf(agent)` is the owner and `mirrorOf(agent)` is that chain'
 **Cost:** the three runs took the guard from 3.77 to 3.45 lREACT.
 
 Logs: `deployments/registry-deploy-20261111-062617.log`, `deployments/registry-demo-20261111-065349.log` (the clean run), and the two earlier `registry-demo-20261111-06*.log`.
+
+---
+
+## Seller keys rotated (2026-11-11)
+
+**Why:** while debugging the registry demo, a process listing on the development Mac showed the two sellers' testnet private keys (the scripts pass them to the seller process as environment variables). Nothing was taken, but `pm-seller` is also the inbox attester, and a leaked attester key can file a false report and freeze the agent. Both keys were replaced the same day. The guard and the vaults were not redeployed.
+
+**What changed** (`script/rotate-seller.sh`):
+
+| | Old | New |
+|---|---|---|
+| Seller A (x402 shop, CCTP relayer, attester) | `0xB8232D5437Aa124c235c8321dec2d1003863cB65` | `0xF5779c263B87d0310315742cd89598E06297b3b2` |
+| Seller B | `0xE7F43b71C95A8965a376322071c8C2e6feb83fCa` | `0xfF2F85b520131AFdF6342A0ea0a446c5dFcC15f1` |
+| Sui shop | `0x2a316b4e56041b8c237f985a823af7b8054cccd7cc73200055cb220fc857ff33` | `0xc1f5e8589dfcaf0e89005e6945fc4265b326222f25c444c438c58e9d97abe1c2` |
+| Solana shop (payee id) | `0x8d6548338301e8d2c785828cb219f8e9e7dc66c491b70145a16e90f4748bfeea` | `0xadbfd2ae5a02b82a4fcae61549025a7a0eaa197931fcd9739c6dacccf212006f` |
+| SpendInbox (Base Sepolia) | `0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6` | `0xD7c7732520FCb454673aB42229Eb60356E96A8A8` |
+
+Owner transactions on Lasna:
+- Seller A: approve new `0x788e2a905dbe76aa3ed4a0a3dc1234f278b56816abd16ccfedc1d2d60cdc900e`, revoke old `0x1d12c31c11789fe864bfb664d483414e2acfaf77d411f47f4102070ff1ba732d`
+- Seller B: approve new `0x016723441c738f46889c8cb428e27d002519ebf80647049b5ca90a4a0ccb659a`, revoke old `0xa58863d83d6a3909973547bf775f5830868f48a9df30db04c371fb8c12eb5358`
+- Sui shop: approve new `0x0edfbfe6319cfdc2667da9cf91193eb96ab19005f3ec36af9c4e030d0d35ac78`, revoke old `0xf707bbef5d2174ce70b9b848ca482416b70103d317a0829278d42b2ddafe6c26`
+- Solana shop: approve new `0xadb96935d12c276c4976cf302d34fc1aedf9fafb35ea301289812b7653b22031`, revoke old `0x7b9f166304512f68d3b7325c1142d8b89e47db6716afe5dda7439c8b30f6fcb1`
+- Guard pointed at the new inbox: `0x3439305e9597329bb1f6742a6b38538d38baa484e773c337da73ea1f2bf2aaa5`
+
+**Why the old attester key is now harmless:** the inbox's attester is immutable, so a new inbox was deployed with the new key as attester. The guard only acts on reports from the inbox it currently names (`inboxOf(84532)`), so anything the old key reports to the old inbox is ignored.
+
+**Checked afterwards:**
+- on the guard, all four new payees read approved and all four old ones read not approved
+- `inboxOf(84532)` is the new inbox and its `attester()` is the new seller A
+- `script/verify.sh` VERIFIED 9 receipts, head unchanged
+- the go-live preflight passes. It now tests that the Keychain passwords really open the keystores; before, it only checked that an entry existed, and it had reported ready while the Keychain still held the old seller's password
+
+**Not re-run:** the Sui and Solana demos against the new shop addresses. Earlier sections of this file show the old addresses, as they were at the time.
+
+Logs: `deployments/rotate-seller2-*.log`, `deployments/rotate-seller-*.log`.
+

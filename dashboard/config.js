@@ -8,10 +8,10 @@ window.PM_CONFIG = {
   agentName: "Andy",
   liveStart: "2026-11-23",
   payees: {
-    "0xB8232D5437Aa124c235c8321dec2d1003863cB65": "the BTC report (x402 shop)",
+    "0xF5779c263B87d0310315742cd89598E06297b3b2": "the BTC report (x402 shop)",
     "0x9a822A254431C6798e1B13Cd809617399b8cda9c": "the owner",
-    "0x2a316b4e56041b8c237f985a823af7b8054cccd7cc73200055cb220fc857ff33": "the shop on Sui",
-    "0x8d6548338301e8d2c785828cb219f8e9e7dc66c491b70145a16e90f4748bfeea": "the shop on Solana"
+    "0xc1f5e8589dfcaf0e89005e6945fc4265b326222f25c444c438c58e9d97abe1c2": "the shop on Sui",
+    "0xadbfd2ae5a02b82a4fcae61549025a7a0eaa197931fcd9739c6dacccf212006f": "the shop on Solana"
   },
   chains: [
     { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },

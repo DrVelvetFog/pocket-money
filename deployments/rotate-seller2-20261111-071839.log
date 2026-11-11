@@ -1,0 +1,16 @@
+pm-seller2 keystore password: 
+SELLER2: 0xE7F43b71C95A8965a376322071c8C2e6feb83fCa -> 0xfF2F85b520131AFdF6342A0ea0a446c5dFcC15f1
+pm-owner keystore password: 
+== settlement gas on 84532
+   owner tx 0xbe5d983946e3667adf286d6a23cce19ed88c47b5cf7a8a2b1e7cf9fdc2435d25
+== settlement gas on 1301
+   owner tx 0x3ddfd4cdf96a264934b82e1b5fa973ff49dd8961cf29fab2f3886acfffd94190
+== settlement gas on 11155111
+   owner tx 0x6f2f1d5c5630ed0b0939cd218eb6015d6bbfe63e3e50e0eb769edf7e6eff9a42
+== guard: approve the new payee, un-approve the old one
+   owner tx 0x016723441c738f46889c8cb428e27d002519ebf80647049b5ca90a4a0ccb659a
+   owner tx 0xa58863d83d6a3909973547bf775f5830868f48a9df30db04c371fb8c12eb5358
+
+== check
+  ✓ new payee approved
+  ✓ old payee revoked
