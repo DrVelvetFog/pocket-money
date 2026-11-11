@@ -1,0 +1,9 @@
+pm-seller keystore password: 
+pm-seller2 keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+seller A: {"ok":true,"payTo":"0xB8232D5437Aa124c235c8321dec2d1003863cB65","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+seller B: {"ok":true,"payTo":"0xE7F43b71C95A8965a376322071c8C2e6feb83fCa","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+
+================ 1. allowance set to $0.30 on Reactive ================
+   owner tx 0x68ccf5bfa1314777db1f70f1827f99e7dffae17521521ce6d8654f50f56989c7

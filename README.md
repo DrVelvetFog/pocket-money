@@ -62,6 +62,7 @@ flowchart LR
 | [`PocketMoney`](src/PocketMoney.sol) | Reactive Lasna | Books every payment on every chain, keeps the household's allowances and ceiling, chains receipts, quarantines, panics, grants raises, tracks vault balances and requests CCTP refills |
 | [`Vault`](src/Vault.sol) | each EVM chain | Holds the owner's USDC. Tops up floats (capped locally at the agent's float), mirrors the budget (`canSpend`), freezes, and sends CCTP refills only to owner-approved peers under a cap |
 | [`SpendInbox`](src/SpendInbox.sol) | Base Sepolia | Where the Sui and Solana attesters report payments, each one exactly once |
+| [`SpendLimitRegistry`](src/SpendLimitRegistry.sol) | each EVM chain | Maps an agent to its vault so **any** x402 seller can find the limit. The agent is bound once, by its own signature; after that only the owner can change the entry |
 
 **Off-chain pieces** (no special powers, all in [`agent/`](agent/src)):
 - **The x402 seller and the agent's daily job**
@@ -77,6 +78,7 @@ Every row is on-chain. The tx hashes are in [`deployments/EVIDENCE.md`](deployme
 |---|---|
 | Spend → top-up | The agent paid over x402 on each of the three chains; each float was refilled (Base, Unichain, Ethereum Sepolia) |
 | Refuse before settling | The budget was used up, so the seller refused with `pocket_money_over_budget` on a chain the agent hadn't touched that day. **Nothing moved.** |
+| Any seller can enforce it | Two sellers with separate keys were given only each chain's registry address, no vault address. The agent bought from both across all three chains; the fourth purchase was refused by the second seller before settling |
 | Ask for a raise | The owner approved +$0.30 **on Ethereum Sepolia**; the agent's retry **on Unichain** settled |
 | Unknown payee → frozen everywhere | A stray payment on Unichain, on Sui, and on Solana each froze the agent on all three EVM chains |
 | Panic | Panic on Ethereum Sepolia froze all three vaults |
@@ -88,8 +90,9 @@ Every row is on-chain. The tx hashes are in [`deployments/EVIDENCE.md`](deployme
 See [`SECURITY.md`](SECURITY.md) for the threat model, the trust assumptions, and the full static-analysis triage.
 
 **Unit tests:**
-- 43 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks (or delivers each one twice, to prove every callback is safe to repeat).
+- 42 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks (or delivers each one twice, to prove every callback is safe to repeat).
 - The heaviest `react()` uses 193k gas (cap: 900k).
+- 21 more cover the [`SpendLimitRegistry`](src/SpendLimitRegistry.sol): only a payer's own signature can bind it, a stolen payer key can't rebind, move or lift its entry, and a facilitator that resolves the mirror through the registry refuses spending done on other chains.
 
 **Invariant fuzzing (8 properties):**
 - **What gets fuzzed:** random payments to the shop or a thief, on any chain or on Sui, plus panics, allowance changes, raises, midnight rollovers and CCTP refills.
@@ -151,6 +154,9 @@ python3 -m http.server 4173 --directory dashboard
 | Vault · Unichain Sepolia | `0x9408E947d6654417BAcF45548070A0453690AdA3` |
 | Vault · Ethereum Sepolia | `0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d` |
 | SpendInbox · Base Sepolia | `0x7d2a761d8262415c00803c3F5Fc3F08Fc47B49e6` |
+| Registry · Base Sepolia | `0xD48A658E4862682FA47C57464E52Cfa3b376E3e1` |
+| Registry · Unichain Sepolia | `0x77BE935e39274963E18E32567e980387aAAae6b8` |
+| Registry · Ethereum Sepolia | `0x51954B6F45739d549644B292DC42b9f63BdFd312` |
 
 Earlier versions were retired on-chain with the vaults' logged `migrate()`, so their history stays visible.
 
@@ -162,6 +168,7 @@ Earlier versions were retired on-chain with the vaults' logged `migrate()`, so t
 - `pm-owner`
 - `pm-agent`
 - `pm-seller`
+- `pm-seller2` (optional, for the two-seller registry demo)
 - `pm-agent-sui` (optional)
 - `pm-agent-sol` (optional)
 
@@ -173,9 +180,11 @@ Earlier versions were retired on-chain with the vaults' logged `migrate()`, so t
 **4. Deploy and run:**
 - `script/deploy.sh` deploys the guard, the vaults and the inbox, and wires everything up.
 - `script/setup-seller.sh` funds the seller and approves it as a payee.
+- `script/deploy-registry.sh` deploys a registry on each chain and binds the agent to its vault.
 - Demos:
   - `script/x402-demo.sh`: x402 payments on every chain
   - `script/v4-demo.sh`: the mirror refusal and a CCTP refill
+  - `script/registry-demo.sh`: two sellers that are given only the registry addresses
   - `script/raise-demo.sh`
   - `script/sui-demo.sh`
   - `script/solana-demo.sh`

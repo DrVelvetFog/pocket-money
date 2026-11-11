@@ -330,3 +330,42 @@ Records: `deployments/daily/2026-11-10-run1.json`, `deployments/daily/2026-11-10
 **Cost:** the redeploy, setup and demo took the new guard from 1.0 to 0.77 lREACT.
 
 Logs: `deployments/deploy-20261110-103005.log`, `deployments/v4-demo-20261110-103509.log`.
+
+---
+
+## Registry: two sellers, no vault addresses (2026-11-11)
+
+Until now only our own seller knew where the agent's budget mirror was. `SpendLimitRegistry` (one per chain) maps a payer to its mirror, so any x402 facilitator can find it. The guard and the vaults were not changed or redeployed.
+
+**Registries, and the agent's binding on each.** The agent signed an EIP-712 `Bind(agent, owner)` message per registry; the owner submitted it. The agent's nonce did not change on any chain (3, 4 and 2 before and after).
+
+| Chain | Registry | `bindWithSig` tx (sent by the owner) |
+|---|---|---|
+| Base Sepolia | `0xD48A658E4862682FA47C57464E52Cfa3b376E3e1` | `0x58b23e95a374aed006122e82d29c47e8f02156a8766f30c5fe53cb12d1c1b073` |
+| Unichain Sepolia | `0x77BE935e39274963E18E32567e980387aAAae6b8` | `0xeecbbde386a3be56ec09231f52d4b8f757adc5e53ed09fc5939fabf840dcca49` |
+| Ethereum Sepolia | `0x51954B6F45739d549644B292DC42b9f63BdFd312` | `0x2a9c43571b628939a8e62a837c285da95e629ab51f8f744666eff080915cef1b` |
+
+On each, `controllerOf(agent)` is the owner and `mirrorOf(agent)` is that chain's vault.
+
+**A second seller.** Seller B is a separate key, `0xE7F43b71C95A8965a376322071c8C2e6feb83fCa`, on its own port. It was funded with settlement gas and approved as a payee (`0x32aaf5ce07761f3f4a637f821947aa074e0931079b6706595f95efe76e213aca` on Lasna). Both sellers were started with the three registry addresses and **no vault addresses**; `/health` reported `"limits":["registry","registry","registry"]` for each.
+
+**The run** (`script/registry-demo.sh`). The day's window already held $0.60 of spending, so the allowance was set to $0.90 (`0x73268882a4a703d8ad45995fb4e758a54ffea087f7a268df2b145f8eff2d1265`), and all three mirrors read 300000 left.
+
+| Purchase ($0.10) | Origin (settled by the seller) | Reactive (Lasna) | Top-up callback |
+|---|---|---|---|
+| Seller B, Unichain Sepolia | `0xe9d97ec318a48fcae9df584654210b845d0165687e1648d8e1284df3c93146b5` | `0x98fd6b47be36fd4f93478e29bb6ea473ff3c23e6d651a511c876972074af4351` | `0x9f1f0fa764f652588878e8533767beb3d797d47f8e823be26d5e8317e611ae79` |
+| Seller A, Base Sepolia | `0x63e221248107bdc50cd559571b82266fe14af4a2cefbc057426c6eb460814a5e` | `0x5adcdb89541e4c132374a081868dbffc332e91032eb6857e83ee1288469bd0ee` | `0x5b488cb411b16a48862ab8e78bce560212f6e57efec70e03304367c84d654133` |
+| Seller B, Ethereum Sepolia | `0xb68faa329ca2e950174b76425a9de8d5ccb33ac986a4b0d23b5cadf6a76901d2` | `0x28db0eea08497bb6358c73379653364e941fce382fd2a6e1a0fd1ed6f34e6822` | `0xc181faeef7ca062ca7edde9e83b83a7ead481c7db0ae668fccfdc16a23f36c18` |
+
+- **Refused before settling:** a 4th purchase, from seller B on Unichain, got `402 pocket_money_over_budget`. Seller B's log: `refused 0x7Cd6…a06b on 1301: over budget (left 0, mirror 0x9408…AdA3 via registry)`. The agent's Unichain USDC stayed at 1000000 and seller B's nonce there stayed at 2, so nothing was sent.
+- **The agent's key can't loosen its entry:** called from the agent's address, `setMirror(agent, 0)` reverts `NotController` and `bind(agent, 0)` reverts `AlreadyBound`. `mirrorOf(agent)` was unchanged.
+- **Reset:** `0x1c513971de8bed20cf5ea47a5e1fd1261fc9117641d8c52d6338db27db1bc25c`.
+- **Receipts:** `script/verify.sh` VERIFIED 9 receipts; the rebuilt head matches the guard (`0x9657d66abaaeea28319a0a4b81e525908ade4cdea42e1537b11a1764148fb498`).
+
+**What went wrong on the way** (both were script faults, and no funds were at risk):
+- The first run set the allowance to a flat $0.30. Yesterday's demo had already spent $0.30 inside the same 24-hour window, so the mirrors read 0 and the script waited. It now sets the allowance to "spent so far + $0.30" and stops before buying if the mirrors don't reach that.
+- The second run settled and topped up all three purchases (origins `0x3cde6dfc5c1646ac237aae0b2888bda34dc844c92d1582e3c1df14b6f14c8f17`, `0x20c73754ab296b43c8fc7f0ad87da7c98ef91893ac3cb5b45be83953b61ea640`, `0xcff4fcc15f1dedf63feb0bd59b9d4707d73d99b73e10384ef2bc7c16571a20f6`) but printed `reactive none`, because the script searched Lasna with an old `Spent` signature. The two-minute wait that caused pushed the Base top-up outside the 200-block range Base's public RPC allows for `eth_getLogs`. It was stopped by hand before the refusal step. The signature is fixed.
+
+**Cost:** the three runs took the guard from 3.77 to 3.45 lREACT.
+
+Logs: `deployments/registry-deploy-20261111-062617.log`, `deployments/registry-demo-20261111-065349.log` (the clean run), and the two earlier `registry-demo-20261111-06*.log`.

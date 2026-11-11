@@ -1,0 +1,26 @@
+pm-agent keystore password: 
+pm-owner keystore password: 
+
+================ chain 84532 ================
+registry  0xD48A658E4862682FA47C57464E52Cfa3b376E3e1
+agent nonce before: 3
+   owner tx 0x58b23e95a374aed006122e82d29c47e8f02156a8766f30c5fe53cb12d1c1b073
+agent nonce after:  3  (unchanged = the agent sent nothing)
+controllerOf(agent) = 0x9a822A254431C6798e1B13Cd809617399b8cda9c  (owner 0x9a822A254431C6798e1B13Cd809617399b8cda9c)
+mirrorOf(agent)     = 0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5  (vault 0x4eE05aab7Afd0EAF7098620cC9FaaA3c27fB98B5)
+
+================ chain 1301 ================
+registry  0x77BE935e39274963E18E32567e980387aAAae6b8
+agent nonce before: 4
+   owner tx 0xeecbbde386a3be56ec09231f52d4b8f757adc5e53ed09fc5939fabf840dcca49
+agent nonce after:  4  (unchanged = the agent sent nothing)
+controllerOf(agent) = 0x0000000000000000000000000000000000000000  (owner 0x9a822A254431C6798e1B13Cd809617399b8cda9c)
+mirrorOf(agent)     = 0x0000000000000000000000000000000000000000  (vault 0x9408E947d6654417BAcF45548070A0453690AdA3)
+
+================ chain 11155111 ================
+registry  0x51954B6F45739d549644B292DC42b9f63BdFd312
+agent nonce before: 2
+   owner tx 0x2a9c43571b628939a8e62a837c285da95e629ab51f8f744666eff080915cef1b
+agent nonce after:  2  (unchanged = the agent sent nothing)
+controllerOf(agent) = 0x9a822A254431C6798e1B13Cd809617399b8cda9c  (owner 0x9a822A254431C6798e1B13Cd809617399b8cda9c)
+mirrorOf(agent)     = 0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d  (vault 0xfEf8522B931Ded31aeAe2F8FF5cb6B5e60E1289d)

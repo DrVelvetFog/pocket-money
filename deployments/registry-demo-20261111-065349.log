@@ -1,0 +1,42 @@
+pm-seller keystore password: 
+pm-seller2 keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+seller A: {"ok":true,"payTo":"0xB8232D5437Aa124c235c8321dec2d1003863cB65","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+seller B: {"ok":true,"payTo":"0xE7F43b71C95A8965a376322071c8C2e6feb83fCa","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+
+================ 1. allowance set on Reactive so that $0.30 is left today ================
+   spent so far today: 600000; allowance -> 900000
+   owner tx 0x73268882a4a703d8ad45995fb4e758a54ffea087f7a268df2b145f8eff2d1265
+   mirror on 84532 says 300000 left
+   mirror on 1301 says 300000 left
+   mirror on 11155111 says 300000 left
+
+================ 2. three $0.10 purchases, two sellers, three chains ================
+-- seller B, Unichain Sepolia
+   origin    0xe9d97ec318a48fcae9df584654210b845d0165687e1648d8e1284df3c93146b5  (settled by 0xE7F43b71C95A8965a376322071c8C2e6feb83fCa)
+   reactive  0x98fd6b47be36fd4f93478e29bb6ea473ff3c23e6d651a511c876972074af4351  (Lasna)
+   callback  0x9f1f0fa764f652588878e8533767beb3d797d47f8e823be26d5e8317e611ae79
+-- seller A, Base Sepolia
+   origin    0x63e221248107bdc50cd559571b82266fe14af4a2cefbc057426c6eb460814a5e  (settled by 0xB8232D5437Aa124c235c8321dec2d1003863cB65)
+   reactive  0x5adcdb89541e4c132374a081868dbffc332e91032eb6857e83ee1288469bd0ee  (Lasna)
+   callback  0x5b488cb411b16a48862ab8e78bce560212f6e57efec70e03304367c84d654133
+-- seller B, Ethereum Sepolia
+   origin    0xb68faa329ca2e950174b76425a9de8d5ccb33ac986a4b0d23b5cadf6a76901d2  (settled by 0xE7F43b71C95A8965a376322071c8C2e6feb83fCa)
+   reactive  0x28db0eea08497bb6358c73379653364e941fce382fd2a6e1a0fd1ed6f34e6822  (Lasna)
+   callback  0xc181faeef7ca062ca7edde9e83b83a7ead481c7db0ae668fccfdc16a23f36c18
+
+================ 3. a 4th purchase from seller B on Unichain: refused before settling ================
+   mirror on Unichain says 0 left
+   agent: seller said 402: {"error":"pocket_money_over_budget"}
+   seller B: refused 0x7Cd681561d75805156568ccF6D8f1Cf0536da06b on 1301: over budget (left 0, mirror 0x9408E947d6654417BAcF45548070A0453690AdA3 via registry)
+   agent USDC on Unichain: 1000000 -> 1000000  (unchanged = nothing moved)
+   seller B nonce on Unichain: 2 -> 2  (unchanged = it sent nothing)
+
+================ 4. the agent's own key can't touch its registry entry ================
+   setMirror(agent, 0) as the agent:    reverts NotController
+   bind(agent, 0) again as the agent:   reverts AlreadyBound
+   mirrorOf(agent) is still 0x9408E947d6654417BAcF45548070A0453690AdA3
+
+================ reset: back to the normal allowance ================
+   owner tx 0x1c513971de8bed20cf5ea47a5e1fd1261fc9117641d8c52d6338db27db1bc25c

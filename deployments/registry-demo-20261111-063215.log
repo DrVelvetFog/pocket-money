@@ -1,0 +1,25 @@
+pm-seller keystore password: 
+pm-seller2 keystore password: 
+pm-agent keystore password: 
+pm-owner keystore password: 
+seller A: {"ok":true,"payTo":"0xB8232D5437Aa124c235c8321dec2d1003863cB65","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+seller B: {"ok":true,"payTo":"0xE7F43b71C95A8965a376322071c8C2e6feb83fCa","chains":[84532,1301,11155111],"limits":["registry","registry","registry"]}
+
+================ 1. allowance set on Reactive so that $0.30 is left today ================
+   spent so far today: 300000; allowance -> 600000
+   owner tx 0x737eeb04b598c4d351163aa3795998d1fdddff39dae52ca37d8f9ceeeac54da2
+   mirror on 84532 says 300000 left
+   mirror on 1301 says 300000 left
+   mirror on 11155111 says 300000 left
+
+================ 2. three $0.10 purchases, two sellers, three chains ================
+-- seller B, Unichain Sepolia
+   origin    0x3cde6dfc5c1646ac237aae0b2888bda34dc844c92d1582e3c1df14b6f14c8f17  (settled by 0xE7F43b71C95A8965a376322071c8C2e6feb83fCa)
+   reactive  none  (Lasna)
+   callback  0x5918b55e33ea0bf2ed5a55b700d81dad00951ab2e29157b9fe3d6614d9f29bd0
+-- seller A, Base Sepolia
+   origin    0x20c73754ab296b43c8fc7f0ad87da7c98ef91893ac3cb5b45be83953b61ea640  (settled by 0xB8232D5437Aa124c235c8321dec2d1003863cB65)
+   reactive  none  (Lasna)
+   callback  none
+-- seller B, Ethereum Sepolia
+   origin    0xcff4fcc15f1dedf63feb0bd59b9d4707d73d99b73e10384ef2bc7c16571a20f6  (settled by 0xE7F43b71C95A8965a376322071c8C2e6feb83fCa)
