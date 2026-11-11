@@ -23,9 +23,15 @@ window.PM_CONFIG = {
   liveStart: "${LIVE_START:-2026-11-23}",
   payees: {
     "$SELLER": "the BTC report (x402 shop)",
+    "${SELLER2:-0x2}": "the BTC report (second x402 shop)",
     "$OWNER": "the owner",
     "${SUI_SHOP:-0x}": "the shop on Sui",
-    "${SOL_SHOP_ID:-0x}": "the shop on Solana"
+    "${SOL_SHOP_ID:-0x}": "the shop on Solana",
+    // retired keys (rotated out): approved when these payments were made
+    "${SELLER_OLD:-0x3}": "the BTC report (x402 shop)",
+    "${SELLER2_OLD:-0x4}": "the BTC report (second x402 shop)",
+    "${SUI_SHOP_OLD:-0x5}": "the shop on Sui",
+    "${SOL_SHOP_ID_OLD:-0x6}": "the shop on Solana"
   },
   chains: [
     { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "$VAULT_84532", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },

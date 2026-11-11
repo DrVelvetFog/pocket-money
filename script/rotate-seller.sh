@@ -28,6 +28,9 @@ setenv() { # setenv <file> <NAME> <value>: replace the line in place
   grep -q "^$2=" "$1" || { echo "$2 is not in $1" >&2; exit 1; }
   sed -i '' "s|^$2=.*|$2=$3|" "$1"
 }
+retire() { # retire <NAME> <old value>: remember a rotated-out address so the dashboard can still label past payments
+  grep -q "^$1_OLD=" deployments/wallets.env && sed -i '' "s|^$1_OLD=.*|$1_OLD=$2|" deployments/wallets.env || echo "$1_OLD=$2" >> deployments/wallets.env
+}
 lower() { tr A-F a-f <<<"$1"; }
 
 SELLER_PK=$(key $KS); export SELLER_PK
@@ -44,7 +47,7 @@ done
 echo "== guard: approve the new payee, un-approve the old one"
 owner $PM "setPayee(address,bool)" $NEW true --rpc-url $LASNA
 owner $PM "setPayee(address,bool)" $OLD false --rpc-url $LASNA
-setenv deployments/wallets.env $VAR $NEW
+retire $VAR $OLD; setenv deployments/wallets.env $VAR $NEW
 
 if [[ $WHICH == seller ]]; then
   for k in SUI_SHOP SOL_SHOP_ID; do
@@ -52,7 +55,7 @@ if [[ $WHICH == seller ]]; then
     echo "== guard: $k $o -> $n"
     owner $PM "setForeignPayee(bytes32,bool)" $n true --rpc-url $LASNA
     [[ -n "$o" ]] && owner $PM "setForeignPayee(bytes32,bool)" $o false --rpc-url $LASNA
-    setenv deployments/wallets.env $k $n
+    [[ -n "$o" ]] && retire $k $o; setenv deployments/wallets.env $k $n
   done
   setenv deployments/wallets.env SOL_SHOP "$(grep '^SOL_SHOP=' <<<"$new" | cut -d= -f2)"
 
