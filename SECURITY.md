@@ -21,6 +21,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 - **The Sui attester is a trusted relay.** It can only make things stricter (a false report tightens the budget or freezes the agent). If it goes silent, the floats still bound the loss.
 - **Reorgs on origin chains:** the Reactive docs don't say whether Reactive waits for origin-chain confirmations. A reorged payment could already have been topped up; the float bounds it.
 - **Mirror lag:** a vault's mirror updates about one of its chain's blocks after the guard books a spend (≈12 s on Ethereum Sepolia). The float bounds that window.
+- **The registry is opt-in.** `SpendLimitRegistry` maps a payer to its mirror so any facilitator can find the limit. A payer is bound once, by its own signature, to a controller; after that only the controller can change the entry. A payer that was never bound has no limit there, and a key stolen *before* binding could be bound by the thief. Bind before funding the agent.
 - **Only USDC is guarded.** Other tokens are out of scope.
 
 ## How we checked
@@ -29,6 +30,12 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 `forge test --mc PocketMoneyTest`.
 - **Approach:** a Reactive Network simulator (`test/ReactiveSim.sol`) matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the callbacks it requests through a proxy mock. It repeats until nothing new happens.
 - **Covers:** every loop, callback authentication, replay, the float cap, the household ceiling, foreign spend, CCTP refills, migration, and the 900k gas cap (the worst `react()` measures 187k).
+
+### Registry tests (21)
+`forge test --mc Registry`.
+- **Binding:** only the payer's own EIP-712 signature (or its own call) binds it. A signature for another controller, another registry or another chain is rejected, and so is a malformed one.
+- **After binding:** the payer key can't rebind, repoint or lift its entry (also fuzzed over any caller). Only the controller can, and it can hand control on.
+- **With the real vault:** a facilitator that resolves the mirror through the registry allows a payment within budget and refuses one after the budget was spent on other chains.
 
 ### Invariant fuzzing (8 properties)
 `forge test --mc PocketMoneyInvariants`.

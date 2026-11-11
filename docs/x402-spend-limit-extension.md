@@ -39,7 +39,11 @@ The mirror's owner, never the payer, controls it.
 
 The facilitator must find the mirror **without trusting the payer to declare it**. A payer that wanted to overspend would simply leave the declaration out. Two options, open for discussion:
 
-1. **Registry (preferred).** A well-known registry contract per network maps `payer → mirror`. Only the payer's *controller* sets the entry; the payer key can't change it. The facilitator calls `registry.mirrorOf(payer)`, and a zero address means no limit applies.
+1. **Registry (preferred).** A well-known registry contract per network maps `payer → mirror`. The facilitator calls `registry.mirrorOf(payer)`, and a zero address means no limit applies.
+   - **Who writes an entry:** the payer binds itself once to a *controller*, either in its own transaction or by signing an EIP-712 `Bind(payer, controller)` message that the controller submits (so a payer with no native gas can still be bound). From then on only the controller can change or lift the entry; the payer key can't.
+   - **Why this shape:** nobody can register a mirror for a payer that hasn't consented, and a payer key stolen after binding can't loosen anything.
+   - **Limit:** binding is opt-in. An unbound payer has no limit here.
+   - A reference contract is [`src/SpendLimitRegistry.sol`](../src/SpendLimitRegistry.sol).
 2. **Server-declared.** A resource server that knows its customers (for example, an enterprise allow-list) names the mirror in `PaymentRequired`. It's weaker, because it only covers that server's own customers.
 
 Payers *may* also echo their mirror in `PaymentPayload` as a hint, but a facilitator **MUST NOT** treat a missing hint as "no limit".
@@ -80,7 +84,7 @@ When enforcing, the facilitator **MUST**:
 1. Resolve the payer from the payment payload (for `exact` EVM, `authorization.from`).
 2. Resolve the payer's mirror (registry or server-declared). If there is none, continue as normal.
 3. Call `canSpend(payer, requirement.amount)` on the requirement's network.
-   - If `ok == false` and `reason != "unknown agent"`: return `isValid: false` with `invalidReason: "spend_limit_<reason>"` (spaces become underscores), and **do not settle**.
+   - If `ok == false`: return `isValid: false` with `invalidReason: "spend_limit_<reason>"` (spaces become underscores), and **do not settle**. One exception: for a *server-declared* mirror, `reason == "unknown agent"` means the payer isn't that server's customer, and the payment continues. A registry entry was set by the payer's controller, so there any refusal stands.
    - If the call itself fails (revert or RPC error): **refuse** with `invalidReason: "spend_limit_check_failed"` (fail closed).
 4. Repeat step 3 immediately before settling. The limit may have moved since verification.
 
@@ -107,6 +111,7 @@ A refusal is not an error in the payment: no funds have moved. Clients **SHOULD*
 
 Pocket Money (Reactive Omni Buildathon, testnet):
 - **The mirror:** `Vault.canSpend` on Base, Unichain and Ethereum Sepolia, updated by a Reactive contract that books the agent's payments on every chain, including Sui and Solana via an attested inbox.
+- **The registry:** `src/SpendLimitRegistry.sol`, with tests in `test/SpendLimitRegistry.t.sol`.
 - **The facilitator check:** `agent/src/seller.ts` wraps an in-process x402 facilitator with the check before both verify and settle.
 - **Live evidence** (`deployments/EVIDENCE.md`):
   - a purchase refused with `pocket_money_over_budget` before settling, with no funds moved
