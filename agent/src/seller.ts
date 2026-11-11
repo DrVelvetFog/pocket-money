@@ -38,35 +38,57 @@ for (const n of NETS) {
   facilitator.register(`eip155:${n.id}`, new ExactFacilitatorScheme(signer));
 }
 
-// ---- Pocket Money pre-check: ask this chain's vault before verifying or settling ----
+// ---- spend-limit pre-check: find the payer's budget mirror, ask it before verifying or settling ----
+// The mirror is found through the chain's SpendLimitRegistry (payer -> mirror, written only by the
+// payer's controller), so this seller needs no per-customer setup and doesn't trust the payer to
+// declare its own limit. VAULT_<chainId> is the older, server-declared way and is used only when
+// no registry is configured for the chain.
+const MIRROR_OF = parseAbi(["function mirrorOf(address) view returns (address)"]);
 const CAN_SPEND = parseAbi(["function canSpend(address,uint256) view returns (bool,uint256,bytes32)"]);
+const ZERO = "0x0000000000000000000000000000000000000000";
 type Req = { network: string; amount: string };
 type Payload = { payload?: { authorization?: { from?: string } } };
 
 /** Returns a refusal reason, or undefined to let the payment through. */
-async function pocketMoneyCheck(payload: Payload, req: Req): Promise<string | undefined> {
+async function spendLimitCheck(payload: Payload, req: Req): Promise<string | undefined> {
   const chainId = Number(req.network.split(":")[1]);
-  const vault = process.env[`VAULT_${chainId}`] as `0x${string}` | undefined;
   const payer = payload.payload?.authorization?.from as `0x${string}` | undefined;
-  if (!vault || !payer) return undefined;
-  const [ok, left, why] = await readers.get(chainId)!.readContract({
-    address: vault, abi: CAN_SPEND, functionName: "canSpend", args: [payer, BigInt(req.amount)],
-  });
+  if (!payer) return undefined;
+  const reader = readers.get(chainId)!;
+  const registry = process.env[`REGISTRY_${chainId}`] as `0x${string}` | undefined;
+  let mirror = process.env[`VAULT_${chainId}`] as `0x${string}` | undefined;
+  let ok: boolean, left: bigint, why: `0x${string}`;
+  try {
+    if (registry) {
+      mirror = await reader.readContract({ address: registry, abi: MIRROR_OF, functionName: "mirrorOf", args: [payer] });
+      if (mirror === ZERO) return undefined; // nobody set a limit for this payer
+    }
+    if (!mirror) return undefined;
+    [ok, left, why] = await reader.readContract({
+      address: mirror, abi: CAN_SPEND, functionName: "canSpend", args: [payer, BigInt(req.amount)],
+    });
+  } catch (e) {
+    console.log(`refused ${payer} on ${chainId}: check failed (${(e as Error).message.split("\n")[0]})`);
+    return "pocket_money_check_failed"; // fail closed: an unreachable registry or mirror is a no
+  }
   const reason = hexToString(why, { size: 32 }).replace(/\0+$/, "");
-  if (ok || reason === "unknown agent") return undefined; // not a household agent: not ours to police
-  console.log(`refused ${payer} on ${chainId}: ${reason} (left ${left})`);
+  if (ok) return undefined;
+  // Server-declared mirror: a payer it doesn't know isn't ours to police. Registry: the payer's
+  // controller named this mirror, so anything but a yes is a no.
+  if (!registry && reason === "unknown agent") return undefined;
+  console.log(`refused ${payer} on ${chainId}: ${reason} (left ${left}, mirror ${mirror}${registry ? " via registry" : ""})`);
   return `pocket_money_${reason.replace(/ /g, "_")}`;
 }
 
 const guarded = {
   getSupported: () => facilitator.getSupported(),
   async verify(payload: Payload, req: Req) {
-    const why = await pocketMoneyCheck(payload, req);
+    const why = await spendLimitCheck(payload, req);
     if (why) return { isValid: false, invalidReason: why, payer: payload.payload?.authorization?.from };
     return facilitator.verify(payload as never, req as never);
   },
   async settle(payload: Payload, req: Req) {
-    const why = await pocketMoneyCheck(payload, req); // re-check: the budget may have moved since verify
+    const why = await spendLimitCheck(payload, req); // re-check: the budget may have moved since verify
     if (why) return { success: false, errorReason: why, transaction: "", network: req.network, payer: payload.payload?.authorization?.from };
     return facilitator.settle(payload as never, req as never);
   },
@@ -107,6 +129,13 @@ app.get("/btc", async (_req, res) => {
   });
 });
 
-app.get("/health", (_req, res) => res.json({ ok: true, payTo: account.address, chains: NETS.map((n) => n.id) }));
+app.get("/health", (_req, res) =>
+  res.json({
+    ok: true,
+    payTo: account.address,
+    chains: NETS.map((n) => n.id),
+    limits: NETS.map((n) => (process.env[`REGISTRY_${n.id}`] ? "registry" : process.env[`VAULT_${n.id}`] ? "declared" : "none")),
+  }),
+);
 
 app.listen(PORT, () => console.log(`seller on http://localhost:${PORT}  payTo ${account.address}`));
