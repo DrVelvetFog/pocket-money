@@ -1,0 +1,65 @@
+/* "Needs the owner" and the owner's desk. Same paper, ink and stamps as style.css. */
+.linkish { font: inherit; color: var(--color-ink-2); background: none; border: 0; padding: 0; min-height: 1.5rem; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: pointer; }
+.linkish:hover { color: var(--color-accent); }
+.linkish:disabled { color: var(--color-ink); text-decoration: none; cursor: default; font-weight: 700; }
+.linkish:focus-visible, .desk button:focus-visible, .desk input:focus-visible, .desk select:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+
+.needs-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2xs); max-width: 64ch; }
+.needs-list li { padding-left: var(--space-sm); box-shadow: inset 3px 0 0 var(--color-accent); overflow-wrap: anywhere; }
+.needs-list li.empty { box-shadow: inset 3px 0 0 var(--color-rule-strong); font-style: normal; }
+
+.desk-status { max-width: 64ch; margin: 0 0 var(--space-lg); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); background: var(--color-paper-2) var(--texture-grain); box-shadow: var(--shadow-groove); font-family: var(--font-outlier); font-size: var(--text-sm); }
+.desk-status.bad { color: var(--color-accent); }
+.desk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); align-items: start; }
+.card {
+  display: grid;
+  gap: var(--space-xs);
+  justify-items: start;
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.35), transparent 40%), var(--color-paper) var(--texture-grain);
+  box-shadow: var(--shadow-card);
+}
+.card[hidden] { display: none; }
+.card.wide { grid-column: 1 / -1; }
+.card.stop { box-shadow: var(--shadow-card), inset 0 3px 0 var(--color-accent); }
+.card h3 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-lg); margin: 0; text-shadow: var(--press); }
+.card p { margin: 0; color: var(--color-ink-2); max-width: 52ch; }
+.card label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); }
+.card small { font: var(--text-xs) var(--font-outlier); color: var(--color-ink-3); }
+.desk button, .desk input, .desk select {
+  font: inherit;
+  min-height: 2.75rem;
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.4), transparent 60%), var(--color-paper) var(--texture-grain);
+}
+.desk button { padding: 0 var(--space-md); cursor: pointer; box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease-out); }
+.desk button:active { transform: translateY(1px); box-shadow: var(--shadow-groove); }
+.desk button:disabled, .desk-busy .desk button { color: var(--color-ink-3); cursor: default; box-shadow: none; }
+.desk-busy .desk button { pointer-events: none; }
+.desk input, .desk select { padding: 0 var(--space-2xs); }
+.desk .money { font-family: var(--font-outlier); white-space: nowrap; }
+.desk .money input { width: 6.5rem; margin-left: 2px; font-family: var(--font-outlier); }
+#payee-new { width: min(100%, 27rem); font-size: var(--text-sm); }
+.desk button.danger { color: var(--color-paper); border-color: var(--color-accent); background: var(--color-accent); font-weight: 700; letter-spacing: 0.02em; }
+.desk button.danger:disabled { color: var(--color-ink-3); background: var(--color-paper-3); border-color: var(--color-rule-strong); font-weight: 400; }
+
+/* the loosening rule: a slip that says what you are about to allow */
+.confirm:empty { display: none; }
+.confirm { width: 100%; padding: var(--space-sm); border-radius: var(--radius-sm); background: var(--color-accent-wash); box-shadow: inset 3px 0 0 var(--color-accent); display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.confirm p { flex: 1 0 100%; color: var(--color-ink); overflow-wrap: anywhere; }
+.confirm .yes { border-color: var(--color-accent); color: var(--color-accent); font-weight: 700; }
+
+.payees, .steps { list-style: none; width: 100%; padding: 0; margin: 0; display: grid; }
+.payees li, .steps li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-xs); padding: var(--space-2xs) 0; border-top: var(--rule-hair) solid var(--color-rule); }
+.payees li span { min-width: 0; }
+.payees small { display: block; overflow-wrap: anywhere; }
+.payees .empty { color: var(--color-accent); font-style: normal; }
+.steps { counter-reset: s; }
+
+@media (max-width: 52rem) {
+  .desk-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .desk button { transition: none; } }

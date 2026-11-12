@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="control.css" />
 </head>
 <body>
   <div class="book">
@@ -19,6 +20,7 @@
       <span>Allowance passbook for <strong id="agent-name">—</strong>, an AI agent</span>
       <span class="mono" id="agent-addr">—</span>
       <a href="how.html">Follow one payment, step by step</a>
+      <button type="button" class="linkish" id="connect">Owner? Connect a wallet</button>
     </div>
     <div class="status" id="status" data-state="loading" role="status" aria-live="polite">Reading the chains…</div>
   </header>
@@ -35,6 +37,63 @@
         <div><dt>Raise today</dt><dd id="f-raise">—</dd></div>
         <div><dt>Resets in</dt><dd id="f-reset">—</dd></div>
       </dl>
+    </section>
+
+    <section class="needs" aria-labelledby="needs-h">
+      <h2 id="needs-h">Needs the owner</h2>
+      <ul class="needs-list" id="needs-list"><li class="empty">Checking…</li></ul>
+    </section>
+
+    <section class="desk" id="desk" aria-labelledby="desk-h" hidden>
+      <h2 id="desk-h">The owner's desk</h2>
+      <p class="section-note">Signed in as the owner, <span class="mono" id="desk-owner">—</span>. Every button here opens your wallet and sends one transaction; this page never sees your key. Each one says which chain it goes to.</p>
+      <p class="desk-status" id="desk-status" role="status" aria-live="polite" hidden></p>
+
+      <div class="desk-grid">
+        <article class="card stop">
+          <h3>Stop everything</h3>
+          <p>Freezes every vault on every chain. The agent can't be topped up and shops are refused until you lift it.</p>
+          <label>Press it on <select id="stop-chain"></select></label>
+          <button type="button" class="danger" id="stop">Stop everything</button>
+          <small>One transaction on that chain. The guard carries the freeze to the others.</small>
+        </article>
+
+        <article class="card" id="thaw-card" hidden>
+          <h3>Lift the freeze</h3>
+          <p id="thaw-why"></p>
+          <div class="confirm" id="thaw-confirm"></div>
+          <ol class="steps" id="thaw-steps"></ol>
+        </article>
+
+        <article class="card">
+          <h3>Daily allowance</h3>
+          <p>Now <strong id="allow-now">—</strong> a day, across every chain. The household ceiling is <span id="allow-ceiling">—</span>.</p>
+          <label>New allowance <span class="money">$<input id="allow-new" type="number" inputmode="decimal" min="0" step="0.01" /></span></label>
+          <button type="button" id="allow-set">Change it</button>
+          <div class="confirm" id="allow-confirm"></div>
+          <small>One transaction on Reactive Lasna.</small>
+        </article>
+
+        <article class="card">
+          <h3>A raise for today</h3>
+          <p>Extra spending until the day resets, without changing the allowance.</p>
+          <label>Extra today <span class="money">$<input id="raise-amount" type="number" inputmode="decimal" min="0" step="0.01" /></span></label>
+          <label>Approve it on <select id="raise-chain"></select></label>
+          <button type="button" id="raise-set">Approve the raise</button>
+          <div class="confirm" id="raise-confirm"></div>
+          <small>One transaction on that chain. The guard applies it everywhere.</small>
+        </article>
+
+        <article class="card wide">
+          <h3>Who the agent may pay</h3>
+          <p>A payment to anyone not on this list freezes the agent on every chain.</p>
+          <ul class="payees" id="payees"></ul>
+          <label>Approve an address <input id="payee-new" type="text" class="mono" placeholder="0x…" spellcheck="false" autocomplete="off" /></label>
+          <button type="button" id="payee-add">Approve it</button>
+          <div class="confirm" id="payee-confirm"></div>
+          <small>One transaction on Reactive Lasna for each change.</small>
+        </article>
+      </div>
     </section>
 
     <section class="chains" aria-labelledby="chains-h">
@@ -76,5 +135,6 @@
 
   <script src="config.js"></script>
   <script src="app.js" type="module"></script>
+  <script src="control.js" type="module"></script>
 </body>
 </html>

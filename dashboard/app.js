@@ -23,6 +23,7 @@ const TOPIC = {
   resumed: "0x5d287a3a02ade76478d8449abebe9dc45b38421247132b68127dd3cd6c05f3cf",
   rebalance: "0x68ca8b6c443cf38f1e5017b6c7aef965edb02a12bba36d28f8215ff3055327a4",
   landed: "0xfd1d525c7e03cdae3e1bc4a0e440a7fd104b8a74581ea329122bd6f17444fb71",
+  payeeSet: "0x963a6da3581b6954f7cc4d050e0b8a6e2eae591d7c265df4c2e2a572d4ad26e6",
 };
 const pad = (hex) => hex.replace(/^0x/, "").toLowerCase().padStart(64, "0");
 const word = (data, i) => BigInt("0x" + data.slice(2 + i * 64, 2 + (i + 1) * 64));
@@ -74,7 +75,7 @@ async function guardState() {
   const left = (x, y) => (y >= x ? 0n : x - y);
   const agentLeft = left(allowance + raise, spent), householdLeft = left(cap, hs);
   return { quarantined, allowance, spent, raise, left: agentLeft < householdLeft ? agentLeft : householdLeft,
-    dayEnds: Number(BigInt(dayStart)) + 86400, panicked: BigInt(panicked) === 1n, head, count: Number(BigInt(count)) };
+    ceiling: BigInt(ceil), dayEnds: Number(BigInt(dayStart)) + 86400, panicked: BigInt(panicked) === 1n, head, count: Number(BigInt(count)) };
 }
 
 async function chainState(c) {
@@ -199,7 +200,7 @@ function renderGuard(g) {
   $("f-allowance").textContent = usd(g.allowance);
   $("f-spent").textContent = usd(g.spent);
   $("f-raise").textContent = g.raise > 0n ? "+" + usd(g.raise) : "none";
-  const secs = Math.max(0, g.dayEnds - Date.now() / 1000);
+  const secs = 86400 - ((Date.now() / 1000 - g.dayEnds) % 86400 + 86400) % 86400; // days run back to back from the guard's start
   $("f-reset").textContent = `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
   const status = $("status");
   status.dataset.state = g.panicked ? "panic" : g.quarantined ? "frozen" : "clear";
@@ -217,6 +218,9 @@ async function refresh() {
     renderChains(chains);
     renderLedger(await ledgerLines(logs));
     renderStatements(logs);
+    // the owner's controls (control.js) work from the same reads
+    window.PM = { guard: g, chains, logs, refresh };
+    document.dispatchEvent(new Event("pm:state"));
     $("p-updated").textContent = new Date().toLocaleTimeString();
   } catch (e) {
     $("status").dataset.state = "loading";
@@ -225,6 +229,7 @@ async function refresh() {
   }
 }
 
+window.PM_LIB = { rpc, call, pad, word, usd, short, addrOf, TOPIC };
 $("agent-name").textContent = C.agentName;
 $("agent-addr").textContent = short(C.agent);
 $("p-guard").textContent = short(C.guard);

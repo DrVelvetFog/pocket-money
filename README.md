@@ -199,6 +199,13 @@ The repository ships the author's deployment as a worked example. `./quickstart`
 
 `$PM`, `$AGENT` and the vault addresses are in `deployments/testnet.env` and `deployments/wallets.env`.
 
+**The same controls from the passbook.** Connect a browser wallet that holds the owner key and the passbook shows an owner's desk: stop everything, lift a freeze, change the allowance, approve a raise for today, and approve or remove payees. The wallet signs each transaction; the page never holds a key. Two rules are built in:
+
+- Anything that tightens (stop, a lower allowance, removing a payee) goes straight to the wallet.
+- Anything that loosens (a raise, a new payee, lifting a freeze) first says in plain words what it will allow and waits for a yes.
+
+Every transaction is simulated against its chain before the wallet opens, and each control names the chain it goes to. The owner is fixed when you deploy, so to use the desk import the `pm-owner` key into the wallet once (`cast wallet decrypt-keystore pm-owner` prints it; testnet keys only). Everyone else sees the read-only passbook and a "Needs the owner" panel with the same checks as `script/watch.sh`.
+
 **Your own agent instead of the demo one:** any x402 client works. Give it the `pm-agent` key and nothing else. It needs no ETH: it signs, and the seller settles. See [`agent/src/agent.ts`](agent/src/agent.ts) (40 lines).
 
 **Step by step, by hand:**
