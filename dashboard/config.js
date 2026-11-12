@@ -6,7 +6,7 @@ window.PM_CONFIG = {
   fromBlock: 8015521,
   agent: "0x7Cd681561d75805156568ccF6D8f1Cf0536da06b",
   agentName: "Andy",
-  liveStart: "2026-11-23",
+  liveStart: "2026-11-16",
   payees: {
     "0xF5779c263B87d0310315742cd89598E06297b3b2": "the BTC report (x402 shop)",
     "0xfF2F85b520131AFdF6342A0ea0a446c5dFcC15f1": "the BTC report (second x402 shop)",

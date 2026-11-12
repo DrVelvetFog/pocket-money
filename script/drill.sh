@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Chaos-day drills for the live run. You run these yourself on their days; each one ends by putting
+# Drills for the live run. You run these yourself; each one ends by putting
 # things back. Asks for the pm-agent and pm-owner passwords once each.
-#   script/drill.sh stray   [chain]  day 4: the agent pays an unknown address -> frozen everywhere
-#   script/drill.sh stolen           day 7: a "stolen key" drains every float to a thief -> loss = floats
-#   script/drill.sh panic   [chain]  day 9: you press panic on one chain -> every vault frozen
-#   script/drill.sh dry              day 11: the guard runs out of lREACT -> top-ups stop (fail closed)
+#   script/drill.sh stray   [chain]  the agent pays an unknown address -> frozen everywhere
+#   script/drill.sh stolen           a "stolen key" drains every float to a thief -> loss = floats
+#   script/drill.sh panic   [chain]  you press panic on one chain -> every vault frozen
+#   script/drill.sh dry              the guard runs out of lREACT -> top-ups stop (fail closed)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source script/lib.sh
@@ -31,7 +31,7 @@ unfreeze_agent() { owner $PM "resumeAgent(address)" $AGENT --rpc-url $LASNA
 
 case $DRILL in
   stray)
-    echo "== day 4: the agent is tricked into paying an unknown address on $CH"
+    echo "== the agent is tricked into paying an unknown address on $CH"
     lf=$(cast block-number --rpc-url $LASNA); froms
     agent $(usdc $CH) "transfer(address,uint256)" 0x000000000000000000000000000000000000dEaD 250000 --rpc-url $(rpc $CH)
     read -r tx _ <<<"$(wait_log $LASNA $lf $PM 'Quarantined(address indexed,uint256 indexed,bytes32,uint256)' 180)"
@@ -39,7 +39,7 @@ case $DRILL in
     expect_everywhere 'AgentFrozen(address indexed,bytes32)' frozen
     echo "== put it back"; unfreeze_agent ;;
   stolen)
-    echo "== day 7: someone has the agent's key and drains every float"
+    echo "== someone has the agent's key and drains every float"
     lf=$(cast block-number --rpc-url $LASNA); froms; lost=0
     for c in "${CHAINS[@]}"; do
       b=$(bal $c $AGENT); [[ $b == 0 ]] && continue
@@ -56,7 +56,7 @@ case $DRILL in
       owner $(usdc $c) "transfer(address,uint256)" $AGENT $((f - $(bal $c $AGENT))) --rpc-url $(rpc $c)
     done ;;
   panic)
-    echo "== day 9: you press panic on $CH"
+    echo "== you press panic on $CH"
     lf=$(cast block-number --rpc-url $LASNA); froms
     owner $(eval echo \$VAULT_$CH) "panic()" --rpc-url $(rpc $CH)
     read -r tx _ <<<"$(wait_log $LASNA $lf $PM 'PanicSeen(uint256 indexed,address indexed,uint256)' 180)"
@@ -66,7 +66,7 @@ case $DRILL in
     owner $PM "resume()" --rpc-url $LASNA
     for c in "${CHAINS[@]}"; do owner $(eval echo \$VAULT_$c) "unfreeze()" --rpc-url $(rpc $c); done ;;
   dry)
-    echo "== day 11: the guard runs out of lREACT; nothing should be topped up (fail closed)"
+    echo "== the guard runs out of lREACT; nothing should be topped up (fail closed)"
     keep=$(cast balance $PM --rpc-url $LASNA)
     owner $PM "withdraw(address,uint256)" $OWNER $keep --rpc-url $LASNA
     echo "   guard balance now $(cast balance $PM --rpc-url $LASNA --ether) lREACT"

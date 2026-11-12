@@ -455,3 +455,44 @@ All three mirrors read $1.79 (from $1.89) after the shop payment.
 
 Logs: `deployments/sui-demo-20261111-073349.log`, `deployments/solana-demo-20261111-073819.log`, and each run's `-attester.log`.
 
+---
+
+## Speed, verification, and a second machine (2026-11-12)
+
+**How fast the loop is.** `script/latency.sh` reads three public block timestamps for every EVM payment the guard has booked: the payment on its own chain, the guard's reaction on Lasna, and the top-up callback back on the payment's chain. Block times are whole seconds, and Lasna's clock can read a second behind the origin's, which is why two rows show -1 s.
+
+| Chain | Payment | To the guard | To the top-up |
+|---|---|---|---|
+| Base | `0x5a74911c…` | 0 s | 2 s |
+| Base | `0xc32ab2b9…` | -1 s | 4 s |
+| Base | `0xdccd1f39…` | 0 s | 2 s |
+| Unichain | `0x3cde6dfc…` | 0 s | 3 s |
+| Base | `0x20c73754…` | 0 s | 2 s |
+| Ethereum | `0xcff4fcc1…` | 1 s | 12 s |
+| Unichain | `0xe9d97ec3…` | -1 s | 2 s |
+| Base | `0x63e22124…` | 0 s | 1 s |
+| Ethereum | `0xb68faa32…` | 0 s | 12 s |
+| Base | `0x2311603f…` | 0 s | 2 s |
+
+Payment to top-up over 10 loops: median 2 s, fastest 1 s, slowest 12 s. Both 12 s rows are Ethereum Sepolia, whose blocks are 12 s apart.
+
+**The deployed code is this code.** All eight contracts are verified on Sourcify as exact matches (runtime and creation bytecode): the guard on Lasna, the three vaults, the spend inbox, and the three registries. Addresses are in the README's deployment table.
+
+**Someone else's machine.** `./quickstart` was run from a fresh clone on a second computer (Ubuntu under WSL on a Windows laptop) with its own new keys, so nothing was shared with the deployment above.
+
+| What | Where |
+|---|---|
+| Owner | `0xae8Db5e71e434CcCCcB5005AF5c9cFdcDFc5bBdc` |
+| Agent | `0xfCD2f43eDFb9e5A7d6324BB7bB0D65ad172359f9` |
+| Guard · Reactive Lasna | `0x86965ab71FB32217BA00252a5F2a56947fa257B3` |
+| Vault · Base Sepolia | `0x86965ab71FB32217BA00252a5F2a56947fa257B3` |
+| Vault · Ethereum Sepolia | `0xaDE8EEA87768CC1Ec541FCf1abD3C2b00a4a566A` |
+| Registry · Base Sepolia | `0x53af28b70ae88a7AbA67750b5e5fFD393F9eb978` |
+| Registry · Ethereum Sepolia | `0x46182c943D289C8afb660FE68A5A5334fB875141` |
+
+The guard and the Base vault share an address because each was that new owner's first contract on its chain.
+
+- Setup made one real x402 purchase on each chain, and `./quickstart check` reported Healthy with 2 verified receipts.
+- The unattended daily job then ran once there: settlement `0x5c8b2d76132352d56e41840fd3c2ca03ad7e53353cd1186017a5deae06229e80` on Base Sepolia, top-up `0x6697be97edc7f2496361c4ca34725abbf3c04648a6d95f1f041def29950cf45b`, mirror $2.80 to $2.70, 3 receipts verified against that guard.
+- The run found three faults in the setup script (it tried an unfunded chain, wrote an empty dashboard config on a two-chain setup, and accepted a mistaken "yes"). All three are fixed in the history: `9db69189`, `aa73c7f4`, `b87384d4`.
+

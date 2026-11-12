@@ -8,6 +8,8 @@ You give an AI agent a wallet and it pays for things on its own, often over [x40
 
 Everything here runs on testnets, and every claim below links to a transaction in [`deployments/EVIDENCE.md`](deployments/EVIDENCE.md).
 
+**Measured, not estimated:** from a payment landing on its chain to the float being refilled there, the median over 10 real payments is **2 seconds** (fastest 1 s; 12 s on Ethereum Sepolia, whose blocks are 12 s apart). [`script/latency.sh`](script/latency.sh) recomputes it from the public chains, with no keys.
+
 ---
 
 ## In 30 seconds
@@ -160,6 +162,8 @@ Its second page, [`how.html`](dashboard/how.html), follows one real payment thro
 | Registry · Unichain Sepolia | `0x77BE935e39274963E18E32567e980387aAAae6b8` |
 | Registry · Ethereum Sepolia | `0x51954B6F45739d549644B292DC42b9f63BdFd312` |
 
+All eight are verified on [Sourcify](https://sourcify.dev) as exact matches, so the code in this repository is the code at those addresses. Look one up at `https://repo.sourcify.dev/<chain id>/<address>` (Lasna is 5318007, Base Sepolia 84532, Unichain Sepolia 1301, Ethereum Sepolia 11155111).
+
 Earlier versions were retired on-chain with the vaults' logged `migrate()`, so their history stays visible.
 
 ## Run your own
@@ -181,6 +185,8 @@ You need Foundry, Node 20+ and `jq`. `./quickstart` then:
 It can be stopped and run again; it picks up where it left off. `./quickstart --plan` shows what is done and what is missing, and sends nothing. For all three chains: `CHAINS="84532 1301 11155111" ./quickstart` (you fund Unichain Sepolia gas yourself).
 
 The repository ships the author's deployment as a worked example. `./quickstart` asks before setting it aside for yours.
+
+It has been run start to finish on a second machine from a fresh clone, with its own keys (Ubuntu under WSL). The addresses and transactions are in [`deployments/EVIDENCE.md`](deployments/EVIDENCE.md), along with the three setup faults that run found and fixed.
 
 ## Using it
 
@@ -240,6 +246,7 @@ FOUNDRY_INVARIANT_RUNS=512 FOUNDRY_INVARIANT_DEPTH=60 forge test --mc PocketMone
 - **Sui and Solana run through a trusted relay.** A false report can only tighten the budget or freeze the agent; silence is bounded by the floats. Sui and Solana have no vault, so payments there are counted and policed but not topped up.
 - **Mirror lag:** a vault's mirror updates about one block (of its own chain) after the guard books a payment. That's ~12 s on Ethereum Sepolia. The float bounds that window.
 - **Reorgs:** Reactive's docs don't say whether it waits for origin-chain confirmations. A reorged payment could already have been topped up; the float bounds it.
+- **If the guard runs out of lREACT**, Reactive stops delivering events to it. Top-ups stop, so spending is bounded by the floats, which is the fail-closed part. Payments made in that window are also not booked, so the day's total and the receipt chain would be short by up to the floats. We have not yet recorded whether Reactive replays those events once the guard is funded again; the `dry` drill in `script/drill.sh` measures it. Until then, treat a dry guard as an incident: `script/watch.sh` and the passbook warn below 0.5 lREACT, and `script/go-live.sh` won't start below 3.
 - **Only USDC is guarded.** Other tokens are out of scope.
 - **Testnet only.** Not audited.
 

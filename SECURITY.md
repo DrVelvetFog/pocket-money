@@ -11,7 +11,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 | Agent overspends its budget | Top-ups stop at the allowance; x402 facilitators that read the mirror refuse **before** settling | Daily spend ≤ allowance + floats (P2) |
 | Forged or replayed top-up | Vault accepts callbacks only from the callback proxy **and** our guard (two checks); top-ups carry a monotonic sequence | Rejected / skipped |
 | Buggy or compromised guard | Vault caps every top-up at the agent's real balance vs its float; CCTP refills only go to owner-approved peer vaults, under an owner cap | Agent never above float (P1); no drain via CCTP |
-| Guard or vault out of gas money | Reactive delivers nothing to a contract in debt | Fails closed: spending stops, never grows |
+| Guard or vault out of gas money | Reactive delivers nothing to a contract in debt | Fails closed: top-ups stop, so spending is bounded by the floats. Payments in that window are not booked (see the trust assumptions) |
 | Owner panic on any chain | Every vault freezes | All top-ups stop |
 | Agent needs more today | The owner approves a one-day raise from any chain's vault (`approveRaise`). Reactive lifts the allowance and household ceiling and re-syncs every mirror. | Expires at the next daily rollover |
 
@@ -22,6 +22,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 - **Reorgs on origin chains:** the Reactive docs don't say whether Reactive waits for origin-chain confirmations. A reorged payment could already have been topped up; the float bounds it.
 - **Mirror lag:** a vault's mirror updates about one of its chain's blocks after the guard books a spend (≈12 s on Ethereum Sepolia). The float bounds that window.
 - **The registry is opt-in.** `SpendLimitRegistry` maps a payer to its mirror so any facilitator can find the limit. A payer is bound once, by its own signature, to a controller; after that only the controller can change the entry. A payer that was never bound has no limit there, and a key stolen *before* binding could be bound by the thief. Bind before funding the agent.
+- **A dry guard loses bookkeeping, not money.** While the guard has no lREACT it receives no events: no top-ups (the safe part), and no receipts for payments made in that window, so the day's total can be short by up to the floats. Whether Reactive replays those events after a refill is not yet recorded here; `script/drill.sh dry` measures it. Alerts fire below 0.5 lREACT.
 - **Only USDC is guarded.** Other tokens are out of scope.
 
 ## How we checked

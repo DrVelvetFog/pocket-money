@@ -30,7 +30,7 @@ window.PM_CONFIG = {
   fromBlock: $FROM_BLOCK,
   agent: "$AGENT",
   agentName: "${AGENT_NAME:-Andy}",
-  liveStart: "${LIVE_START:-2026-11-23}",
+  liveStart: "${LIVE_START:-2026-11-16}",
   payees: {
     "$SELLER": "the BTC report (x402 shop)",
     "${SELLER2:-0x2}": "the BTC report (second x402 shop)",
