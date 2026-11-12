@@ -27,7 +27,7 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 
 ## How we checked
 
-### Unit tests (42)
+### Unit tests (47)
 `forge test --mc PocketMoneyTest`.
 - **Approach:** a Reactive Network simulator (`test/ReactiveSim.sol`) matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the callbacks it requests through a proxy mock. It repeats until nothing new happens.
 - **Covers:** every loop, callback authentication, replay, the float cap, the household ceiling, foreign spend, CCTP refills, migration, and the 900k gas cap (the worst `react()` measures 187k).
@@ -37,6 +37,11 @@ Testnet software built for the Reactive Omni Buildathon. Not audited. This file 
 - **Binding:** only the payer's own EIP-712 signature (or its own call) binds it. A signature for another controller, another registry or another chain is rejected, and so is a malformed one.
 - **After binding:** the payer key can't rebind, repoint or lift its entry (also fuzzed over any caller). Only the controller can, and it can hand control on.
 - **With the real vault:** a facilitator that resolves the mirror through the registry allows a payment within budget and refuses one after the budget was spent on other chains.
+
+### Mutation testing
+We broke the rules on purpose and checked the tests noticed: 52 single-operator changes across the four contracts (a `>=` turned into `>`, an `&&` into `||`, a `true` into `false`), each run against the whole suite.
+- The first pass caught 43. Five of the nine that got through were real gaps, and the worst was that **no test checked a frozen vault or a frozen agent refuses a top-up** the guard asks for. Each now has a test: frozen vault, frozen agent, a rebalance of exactly the cap, a foreign-spend event from a contract that isn't the inbox, and no second refill while one is in flight.
+- With those, 48 of 52 are caught. The other four change nothing observable (`used >= cap ? 0 : cap - used` against `>`, where both give 0 at equality; the same shape in the float calculation; sending a zero transfer; and a donor check that a vault mid-refill can never reach because it is below the floor).
 
 ### Invariant fuzzing (8 properties)
 `forge test --mc PocketMoneyInvariants`.

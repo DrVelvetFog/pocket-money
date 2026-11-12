@@ -283,6 +283,80 @@ contract PocketMoneyTest is ReactiveSim {
         assertEq(_bal(andy, BASE), FLOAT);
     }
 
+    // ---- rules the mutation run showed no test was holding ----
+
+    function test_frozenVaultSkipsATopUpEvenIfTheGuardAsks() public {
+        vault[BASE].panic();
+        vm.prank(andy);
+        usdc[BASE].transfer(shop, 2e6);
+        vm.getRecordedLogs(); // don't let the simulator see any of it
+        bytes memory p = abi.encodeWithSignature(
+            "topUp(address,address,uint256,uint64)", address(0), andy, uint256(2e6), uint64(50)
+        );
+        proxy.deliver(address(pm), address(vault[BASE]), p);
+        assertEq(_bal(andy, BASE), FLOAT - 2e6);
+    }
+
+    function test_frozenAgentSkipsATopUpEvenIfTheGuardAsks() public {
+        proxy.deliver(
+            address(pm),
+            address(vault[BASE]),
+            abi.encodeWithSignature("freezeAgent(address,address,bytes32)", address(0), andy, bytes32("test"))
+        );
+        assertTrue(vault[BASE].agentFrozen(andy));
+        vm.prank(andy);
+        usdc[BASE].transfer(shop, 2e6);
+        vm.getRecordedLogs();
+        bytes memory p = abi.encodeWithSignature(
+            "topUp(address,address,uint256,uint64)", address(0), andy, uint256(2e6), uint64(50)
+        );
+        proxy.deliver(address(pm), address(vault[BASE]), p);
+        assertEq(_bal(andy, BASE), FLOAT - 2e6);
+        // and the other agent on the same vault is untouched by that freeze
+        vm.prank(plummy);
+        usdc[BASE].transfer(shop, 1e6);
+        vm.getRecordedLogs();
+        p = abi.encodeWithSignature(
+            "topUp(address,address,uint256,uint64)", address(0), plummy, uint256(1e6), uint64(51)
+        );
+        proxy.deliver(address(pm), address(vault[BASE]), p);
+        assertEq(_bal(plummy, BASE), FLOAT);
+    }
+
+    function test_rebalanceOfExactlyTheCapIsAllowed() public {
+        bytes memory p = abi.encodeWithSignature(
+            "rebalance(address,uint32,uint256,uint256,uint64)", address(0), uint32(10), 50e6, 0, uint64(1)
+        );
+        proxy.deliver(address(pm), address(vault[BASE]), p);
+        assertEq(tm.burnCount(), 1); // the cap is the most allowed, not one past it
+    }
+
+    function test_foreignSpendFromAContractThatIsNotTheInboxIsIgnored() public {
+        uint256 receipts = pm.receiptCount();
+        IReactive.LogRecord memory r;
+        r.chainId = BASE;
+        r.contractAddress = thief; // looks like the inbox's event, comes from somewhere else
+        r.topic0 = uint256(keccak256("ForeignSpend(address,bytes32,uint256,bytes32,bytes32)"));
+        r.topic1 = uint256(uint160(andy));
+        r.topic2 = uint256(SUI_THIEF);
+        r.data = abi.encode(uint256(1e6), bytes32("sui:testnet"), keccak256("forged"));
+        vm.prank(address(0x8888888888888888888888888888888888888888));
+        pm.react(r);
+        assertEq(pm.receiptCount(), receipts);
+        (, bool quarantined,,,) = pm.agents(andy);
+        assertFalse(quarantined);
+    }
+
+    function test_noSecondRefillWhileOneIsOnItsWay() public {
+        pm.setRebalancePolicy(97e6, 99e6, 1000);
+        usdc[ETH].mint(address(vault[ETH]), 10e6);
+        _pump();
+        _spend(andy, BASE, shop, 4e6); // Base drops below the floor: one refill is requested
+        assertEq(tm.burnCount(), 1);
+        _spend(plummy, BASE, shop, 1e6); // still low, refill not landed yet
+        assertEq(tm.burnCount(), 1);
+    }
+
     function test_directCallToVaultReverts() public {
         vm.expectRevert(abi.encodeWithSelector(AbstractPayer.NotAuthorized.selector, address(this), address(proxy)));
         vault[BASE].topUp(address(pm), andy, 1e6, 1);
