@@ -145,6 +145,8 @@ cast call 0x9408E947d6654417BAcF45548070A0453690AdA3 "canSpend(address,uint256)(
 python3 -m http.server 4173 --directory dashboard
 ```
 
+Its second page, [`how.html`](dashboard/how.html), follows one real payment through all five steps, and lets you ask the live vaults whether an amount of your choosing would be allowed.
+
 ## Current deployment (testnet)
 
 | | Address |

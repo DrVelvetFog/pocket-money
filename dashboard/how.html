@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pocket Money · Follow one payment</title>
+  <meta name="description" content="Follow one real payment by an AI agent through every step of its spending limit, read straight from the chains." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="how.css" />
+</head>
+<body>
+  <div class="book">
+  <header class="masthead">
+    <div class="wordmark">Pocket Money</div>
+    <div class="masthead-meta">
+      <span>Follow one payment by <strong id="agent-name">—</strong>, an AI agent</span>
+      <a href="./">Back to the passbook</a>
+    </div>
+    <div class="status" id="status" data-state="loading" role="status" aria-live="polite">Reading the chains…</div>
+  </header>
+
+  <main>
+    <section class="pick" aria-labelledby="pick-h">
+      <h1 id="pick-h">Follow one payment</h1>
+      <p class="section-note">Pick a payment the agent really made. Each step below shows what happened to it, with the transaction to check. Nothing here is a recording: the page reads public chains as you look at it.</p>
+      <label class="picker"><span>Payment</span>
+        <select id="payment" disabled><option>Reading the ledger…</option></select>
+      </label>
+    </section>
+
+    <section class="walk" aria-labelledby="step-title">
+      <div class="rail" aria-hidden="true"><i class="coin" id="coin">$</i></div>
+      <ol class="route" id="route">
+        <li><button type="button" data-step="0"><b>1</b><span>The agent</span></button></li>
+        <li><button type="button" data-step="1"><b>2</b><span>The shop</span></button></li>
+        <li><button type="button" data-step="2"><b>3</b><span id="station-chain">The chain</span></button></li>
+        <li><button type="button" data-step="3"><b>4</b><span>The guard</span></button></li>
+        <li><button type="button" data-step="4"><b>5</b><span>Every vault</span></button></li>
+      </ol>
+
+      <div class="step" id="step" aria-live="polite">
+        <h2 id="step-title">—</h2>
+        <p id="step-words"></p>
+        <dl class="facts" id="step-facts"></dl>
+
+        <div class="ask" id="ask" hidden>
+          <h3>Ask the vaults yourself</h3>
+          <p>This is the same question a shop asks, sent to the real vaults right now. It reads; it changes nothing and costs nothing.</p>
+          <label>Would a payment of <span class="money">$<input id="ask-amount" type="number" inputmode="decimal" min="0" step="0.01" value="0.10" /></span> be allowed?</label>
+          <ul class="answers" id="answers"></ul>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="prev">Back</button>
+        <button type="button" id="play">Play</button>
+        <button type="button" id="next">Next</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="proof">
+    <p>The steps above are the guard's own events on Reactive Lasna and each chain's vault, read over public RPC. There is no server behind this page.</p>
+  </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="how.js" type="module"></script>
+</body>
+</html>

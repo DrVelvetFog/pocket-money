@@ -34,9 +34,9 @@ window.PM_CONFIG = {
     "${SOL_SHOP_ID_OLD:-0x6}": "the shop on Solana"
   },
   chains: [
-    { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "$VAULT_84532", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },
-    { id: 1301, name: "Unichain Sepolia", rpc: "https://sepolia.unichain.org", vault: "$VAULT_1301", usdc: "0x31d0220469e10c4E71834a79b1f276d740d3768F", tx: "https://sepolia.uniscan.xyz/tx/" },
-    { id: 11155111, name: "Ethereum Sepolia", rpc: "https://ethereum-sepolia-rpc.publicnode.com", vault: "$VAULT_11155111", usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", tx: "https://sepolia.etherscan.io/tx/" }
+    { id: 84532, name: "Base Sepolia", rpc: "https://sepolia.base.org", vault: "$VAULT_84532", registry: "${REGISTRY_84532:-}", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tx: "https://sepolia.basescan.org/tx/" },
+    { id: 1301, name: "Unichain Sepolia", rpc: "https://sepolia.unichain.org", vault: "$VAULT_1301", registry: "${REGISTRY_1301:-}", usdc: "0x31d0220469e10c4E71834a79b1f276d740d3768F", tx: "https://sepolia.uniscan.xyz/tx/" },
+    { id: 11155111, name: "Ethereum Sepolia", rpc: "https://ethereum-sepolia-rpc.publicnode.com", vault: "$VAULT_11155111", registry: "${REGISTRY_11155111:-}", usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", tx: "https://sepolia.etherscan.io/tx/" }
   ]
 };
 EOF

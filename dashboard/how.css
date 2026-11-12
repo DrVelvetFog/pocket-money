@@ -1,0 +1,99 @@
+/* "Follow one payment": the passbook's second page. Same paper, ink and stamps as style.css. */
+.masthead-meta a { color: var(--color-ink-2); }
+.pick { padding-top: var(--space-xl); }
+.pick h1 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-2xl); line-height: 1.1; margin: 0 0 var(--space-xs); text-shadow: var(--press); }
+.picker { display: grid; gap: var(--space-3xs); max-width: 44rem; }
+.picker span, .facts dt { color: var(--color-ink-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+select, .money input, .controls button {
+  font: inherit;
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.4), transparent 60%), var(--color-paper) var(--texture-grain);
+  box-shadow: var(--shadow-card);
+}
+select { padding: var(--space-2xs) var(--space-xs); min-height: 2.75rem; max-width: 100%; }
+select:focus-visible, .money input:focus-visible, button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+
+/* the route: five counters the payment visits, with a coin riding the stitched rail above them */
+/* the rail runs from the middle of the first counter to the middle of the last */
+.rail { position: relative; height: 2.5rem; margin: 0 calc((100% - 4 * var(--space-sm)) / 10); border-bottom: 1.5px dashed oklch(50% 0.17 28 / 0.55); --step: 0; }
+.coin {
+  position: absolute;
+  bottom: -0.95rem;
+  left: calc(var(--step) * 25%);
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-left: -0.95rem;
+  display: grid;
+  place-items: center;
+  font: 700 var(--text-sm) var(--font-outlier);
+  color: var(--color-paper);
+  background: radial-gradient(circle at 35% 30%, oklch(60% 0.17 28), var(--color-accent) 70%);
+  border-radius: 50%;
+  box-shadow: 0 1px 0 oklch(100% 0 0 / 0.35) inset, 0 3px 6px -1px oklch(30% 0.06 40 / 0.5);
+  transition: left var(--dur-slow) var(--ease-in-out);
+}
+.route { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-sm); padding: 0; margin: var(--space-md) 0 var(--space-xl); }
+.route button {
+  width: 100%;
+  min-height: 5rem;
+  padding: var(--space-xs);
+  display: grid;
+  gap: var(--space-3xs);
+  justify-items: center;
+  align-content: center;
+  font: inherit;
+  color: var(--color-ink-2);
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.35), transparent 40%), var(--color-paper) var(--texture-grain);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.route b { font: 700 var(--text-sm) var(--font-outlier); color: var(--color-ink-3); }
+.route span { font-family: var(--font-display); font-size: var(--text-lg); line-height: 1.15; text-align: center; text-wrap: balance; }
+.route button:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-lift); }
+.route button[aria-current="step"] { color: var(--color-ink); transform: translateY(-4px); box-shadow: var(--shadow-card-lift), inset 0 3px 0 var(--color-accent); }
+.route button[aria-current="step"] b { color: var(--color-accent); }
+.route button.done b::after { content: " ✓"; }
+
+.step { min-height: 22rem; }
+.step h2 { max-width: 30ch; text-wrap: balance; }
+.step > p { max-width: 62ch; margin: 0 0 var(--space-lg); font-size: var(--text-lg); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--space-md) var(--space-xl); margin: 0; }
+.facts dd { margin: 0; font-size: var(--text-lg); overflow-wrap: anywhere; }
+.facts dd small { display: block; font: var(--text-xs) var(--font-outlier); color: var(--color-ink-3); }
+
+.ask { margin-top: var(--space-xl); padding: var(--space-md); max-width: 44rem; border-radius: var(--radius-sm); background: var(--color-paper-2) var(--texture-grain); box-shadow: var(--shadow-groove); }
+.ask h3 { font-family: var(--font-display); font-weight: 500; font-size: var(--text-lg); margin: 0 0 var(--space-3xs); }
+.ask p { margin: 0 0 var(--space-sm); color: var(--color-ink-2); }
+.money { white-space: nowrap; font-family: var(--font-outlier); }
+.money input { width: 6.5rem; min-height: 2.75rem; padding: 0 var(--space-2xs); margin-left: 2px; font-family: var(--font-outlier); }
+.answers { list-style: none; padding: 0; margin: var(--space-sm) 0 0; display: grid; gap: var(--space-2xs); }
+.answers li { display: grid; grid-template-columns: 11rem 1fr; gap: var(--space-xs); align-items: baseline; padding-top: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); }
+.answers .no { color: var(--color-accent); font-weight: 700; }
+.answers small { font: var(--text-xs) var(--font-outlier); color: var(--color-ink-3); }
+
+.controls { display: flex; gap: var(--space-xs); margin-top: var(--space-xl); }
+.controls button { min-height: 2.75rem; padding: 0 var(--space-md); cursor: pointer; transition: transform var(--dur-fast) var(--ease-out); }
+.controls button:active { transform: translateY(1px); box-shadow: var(--shadow-groove); }
+.controls button:disabled { color: var(--color-ink-3); cursor: default; box-shadow: none; }
+#next { border-color: var(--color-accent); color: var(--color-accent); font-weight: 700; }
+#next:disabled { border-color: var(--color-rule-strong); color: var(--color-ink-3); font-weight: 400; }
+
+@media (max-width: 52rem) {
+  .rail { display: none; }
+  .route { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
+  .route button { min-height: 2.75rem; grid-template-columns: 2.5rem 1fr; justify-items: start; }
+  .route b { white-space: nowrap; }
+  .route button[aria-current="step"], .route button:hover { transform: none; }
+  .route button[aria-current="step"] { box-shadow: var(--shadow-card-lift), inset 3px 0 0 var(--color-accent); }
+  .route span { text-align: left; }
+  .answers li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .step { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin, .route button, .controls button { transition: none; }
+}
