@@ -141,6 +141,7 @@ if ! have PM deployments/testnet.env 2>/dev/null; then
 fi
 
 say "4. guard on Reactive, a vault on each chain (asks for the pm-owner password)"
+unset CHAINS # lib.sh made it an array, and bash can't export an array: deploy.sh would get its default of all three
 export CHAINS="${WANT_CHAINS[*]}" VAULT_USDC_BASE=4000000 VAULT_USDC_UNI=4000000 VAULT_USDC_ETH=4000000
 if have PM deployments/testnet.env 2>/dev/null; then RESUME=1 script/deploy.sh; else script/deploy.sh; fi
 unset CHAINS; source script/lib.sh; set -a; source deployments/testnet.env; set +a
