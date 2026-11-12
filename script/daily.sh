@@ -19,8 +19,9 @@ unlock() { local k; k=$(CAST_UNSAFE_PASSWORD="$(kc "$1")" cast wallet decrypt-ke
   [[ -n "$k" ]] || { echo "could not unlock $1" >&2; exit 1; }; printf '%s' "$k"; }
 SELLER_PK=$(unlock pm-seller); AGENT_PK=$(unlock pm-agent); export SELLER_PK AGENT_PK; export RELAYER_PK=$SELLER_PK
 
-(cd agent && PORT=$PORT npx tsx src/seller.ts >>../deployments/daily/$DAY-seller.log 2>&1) &
-(cd agent && npx tsx src/relayer.ts >>../deployments/daily/$DAY-relayer.log 2>&1) &
+# exec: no wrapper shell is left behind to print "Terminated" when the job stops these at the end
+(cd agent && PORT=$PORT exec npx tsx src/seller.ts >>../deployments/daily/$DAY-seller.log 2>&1) &
+(cd agent && exec npx tsx src/relayer.ts >>../deployments/daily/$DAY-relayer.log 2>&1) &
 trap 'pkill -f "tsx src/seller.ts" 2>/dev/null; pkill -f "tsx src/relayer.ts" 2>/dev/null; true' EXIT
 for _ in $(seq 1 60); do curl -sf localhost:$PORT/health >/dev/null && break; sleep 1; done
 
@@ -40,3 +41,4 @@ jq -n --arg day "$DAY" --arg chain "$CHAIN" --arg settled "$settled" --arg topup
   '{day:$day, chain:($chain|tonumber), report:$report, settlement:$settled, topUp:$topup,
     mirrorBefore:$before, mirrorAfter:$after, refusal:$refusal, verify:$verify}' > "$OUT"
 cat "$OUT"
+echo "== done. Saved to $OUT; the seller and relayer are stopped."
