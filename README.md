@@ -92,9 +92,11 @@ Every row is on-chain. The tx hashes are in [`deployments/EVIDENCE.md`](deployme
 See [`SECURITY.md`](SECURITY.md) for the threat model, the trust assumptions, and the full static-analysis triage.
 
 **Unit tests:**
-- 42 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks (or delivers each one twice, to prove every callback is safe to repeat).
+- 47 Foundry unit tests run against a Reactive Network simulator. It matches every emitted log against the guard's real subscriptions, feeds it to `react()`, and delivers the requested callbacks (or delivers each one twice, to prove every callback is safe to repeat).
 - The heaviest `react()` uses 193k gas (cap: 900k).
 - 21 more cover the [`SpendLimitRegistry`](src/SpendLimitRegistry.sol): only a payer's own signature can bind it, a stolen payer key can't rebind, move or lift its entry, and a facilitator that resolves the mirror through the registry refuses spending done on other chains.
+
+**Mutation testing:** we broke 52 rules one at a time (a `>=` into `>`, an `&&` into `||`) and ran the suite against each. 48 are caught; the other four change nothing observable. The first pass found five real gaps, including that nothing checked a frozen vault refuses a top-up; each now has a test. Details in [`SECURITY.md`](SECURITY.md).
 
 **Invariant fuzzing (8 properties):**
 - **What gets fuzzed:** random payments to the shop or a thief, on any chain or on Sui, plus panics, allowance changes, raises, midnight rollovers and CCTP refills.
@@ -200,6 +202,8 @@ It has been run start to finish on a second machine from a fresh clone, with its
 | Give the agent a one-day raise | `cast send <any vault> "approveRaise(address,uint256)" $AGENT <units> ...` on whichever chain is handy |
 | Stop everything | `cast send <any vault> "panic()" --account pm-owner --rpc-url <that chain>` |
 | Recover after a freeze | `script/drill.sh` shows each case and its reset |
+| Get alerts on your phone | `script/alerts-setup.sh` makes a private [ntfy](https://ntfy.sh) topic and sends a test. `script/go-live.sh` then keeps a watcher running every two minutes |
+| Let a real model run an errand | `script/andy.sh`. A local model (Ollama, `hermes3` by default) checks its budget and buys over x402. If the shop refuses it for being over budget, it asks you for a raise: a request signed by the agent's key, sent to your phone and shown at the owner's desk, where the passbook checks the signature before calling it the agent's. `ANDY_MODEL=claude` uses Claude instead |
 | Replace a leaked seller key | `script/rotate-seller.sh` |
 | Run the agent's job every morning, unattended | `script/keychain-setup.sh`, then `script/go-live.sh`. macOS keeps the two job passwords in your Keychain and schedules with launchd. Linux keeps them in `~/.config/pocket-money/` (readable only by you, which is weaker) and schedules with cron. With less than 3 lREACT in the guard: `MIN_LREACT=1 script/go-live.sh` |
 

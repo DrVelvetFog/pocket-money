@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Start (or stop) the live run.
 #   script/go-live.sh           preflight -> turn on the guard's daily cron -> install the 08:00 job
+#                               and a watcher that alerts you when something changes
 #   script/go-live.sh --check   preflight only
 #   script/go-live.sh --stop    remove the 08:00 job and turn the cron off
 # The 08:00 job is a launchd agent on macOS and a crontab line on Linux.
@@ -13,7 +14,10 @@ REPO=$(pwd)
 LABEL=com.uigstudios.pocketmoney.daily
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 CRON_LINE="0 8 * * * /bin/bash $REPO/script/daily.sh >> $REPO/deployments/daily/cron.log 2>&1 # pocket-money-daily"
-uncron() { crontab -l 2>/dev/null | grep -v '# pocket-money-daily$' || true; }
+WATCH=com.uigstudios.pocketmoney.watch
+WATCH_PLIST="$HOME/Library/LaunchAgents/$WATCH.plist"
+WATCH_LINE="*/2 * * * * /bin/bash $REPO/script/watch.sh --once >> $REPO/deployments/daily/watch.log 2>&1 # pocket-money-watch"
+uncron() { crontab -l 2>/dev/null | grep -vE '# pocket-money-(daily|watch)$' || true; }
 MODE=${1:-start}
 
 ok=1
@@ -38,10 +42,10 @@ check "receipt chain verifies" "script/verify.sh >/dev/null 2>&1"
 [[ $MODE == --check ]] && { (( ok )) && echo "ready." || echo "not ready."; exit $(( 1 - ok )); }
 
 if [[ $MODE == --stop ]]; then
-  if is_mac; then launchctl bootout gui/$(id -u)/$LABEL 2>/dev/null || true; rm -f "$PLIST"; else uncron | crontab -; fi
+  if is_mac; then for l in $LABEL $WATCH; do launchctl bootout gui/$(id -u)/$l 2>/dev/null || true; done; rm -f "$PLIST" "$WATCH_PLIST"; else uncron | crontab -; fi
   owner_init; trap 'rm -rf "$OWNER_PW_DIR"' EXIT
   owner $PM "setCron(bool)" false --rpc-url $LASNA
-  echo "stopped: daily job removed, cron off."; exit 0
+  echo "stopped: daily job and watcher removed, cron off."; exit 0
 fi
 
 (( ok )) || { echo "preflight failed; fix the ✗ lines (or run with --check to recheck)."; exit 1; }
@@ -49,16 +53,18 @@ owner_init; trap 'rm -rf "$OWNER_PW_DIR"' EXIT
 echo "== cron on: the guard closes each day and prints its statement on Reactive's ~3h timer"
 owner $PM "setCron(bool)" true --rpc-url $LASNA
 mkdir -p deployments/daily
+[[ -n "$(alert_url)" ]] && echo "== a watcher checks every two minutes and alerts your phone" || echo "== a watcher checks every two minutes (alerts stay on this machine; script/alerts-setup.sh sends them to your phone)"
 if is_mac; then
   echo "== installing the 08:00 job ($PLIST)"
   mkdir -p "$HOME/Library/LaunchAgents"
   sed "s#__REPO__#$REPO#g" deploy/$LABEL.plist > "$PLIST"
-  launchctl bootout gui/$(id -u)/$LABEL 2>/dev/null || true
-  launchctl bootstrap gui/$(id -u) "$PLIST"
+  sed "s#__REPO__#$REPO#g" deploy/$WATCH.plist > "$WATCH_PLIST"
+  for l in $LABEL $WATCH; do launchctl bootout gui/$(id -u)/$l 2>/dev/null || true; done
+  launchctl bootstrap gui/$(id -u) "$PLIST"; launchctl bootstrap gui/$(id -u) "$WATCH_PLIST"
   echo "live. First run: tomorrow 08:00 (or now: launchctl kickstart gui/$(id -u)/$LABEL)."
 else
   echo "== installing the 08:00 job (a line in your crontab)"
-  { uncron; echo "$CRON_LINE"; } | crontab -
+  { uncron; echo "$CRON_LINE"; echo "$WATCH_LINE"; } | crontab -
   echo "live. First run: tomorrow 08:00 (or now: script/daily.sh)."
   pgrep -x cron >/dev/null || pgrep -x crond >/dev/null ||
     echo "  ! cron is not running, so nothing will fire. Start it: sudo service cron start   (on WSL it also needs the Ubuntu window, or systemd, running at 08:00)"

@@ -46,6 +46,7 @@
 .desk button.danger { color: var(--color-paper); border-color: var(--color-accent); background: var(--color-accent); font-weight: 700; letter-spacing: 0.02em; }
 .desk button.danger:disabled { color: var(--color-ink-3); background: var(--color-paper-3); border-color: var(--color-rule-strong); font-weight: 400; }
 
+.card .request { width: 100%; padding: var(--space-xs) var(--space-sm); color: var(--color-ink); background: var(--color-paper-2) var(--texture-grain); box-shadow: var(--shadow-groove); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
 /* the loosening rule: a slip that says what you are about to allow */
 .confirm:empty { display: none; }
 .confirm { width: 100%; padding: var(--space-sm); border-radius: var(--radius-sm); background: var(--color-accent-wash); box-shadow: inset 3px 0 0 var(--color-accent); display: flex; flex-wrap: wrap; gap: var(--space-xs); }

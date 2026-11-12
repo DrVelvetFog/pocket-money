@@ -1,4 +1,5 @@
 # Shared helpers for the Pocket Money scripts (bash 3.2 safe). Source after `cd` to the repo root.
+export PATH="$HOME/.foundry/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" # launchd and cron start with a bare PATH
 LASNA=https://lasna-rpc.rnk.dev/
 rpc()  { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;
                    1301) echo ${UNI_RPC:-https://sepolia.unichain.org};;
@@ -42,6 +43,10 @@ PASS_DIR=${PM_PASS_DIR:-$HOME/.config/pocket-money}
 is_mac() { [[ $(uname) == Darwin ]]; }
 keypass() { if is_mac; then security find-generic-password -s pocket-money -a "$1" -w 2>/dev/null; else cat "$PASS_DIR/$1.pass" 2>/dev/null; fi; }
 opens()   { local k; k=$(keypass "$1") && CAST_UNSAFE_PASSWORD="$k" cast wallet decrypt-keystore "$1" >/dev/null 2>&1; }
+# unlock <keystore name>: the key, from the stored password if there is one, else by asking
+unlock() { if opens "$1"; then CAST_UNSAFE_PASSWORD="$(keypass "$1")" cast wallet decrypt-keystore "$1" 2>/dev/null | grep -oE '0x[0-9a-fA-F]{64}'; else key "$1"; fi; }
+# Where alerts go (script/alerts-setup.sh): a push address such as an ntfy topic. Empty means terminal only.
+alert_url() { echo "${ALERT_URL:-$(cat "$PASS_DIR/alert-url" 2>/dev/null || true)}"; }
 
 # wait_log <rpc> <from-block> <address> <event sig> [seconds] -> "tx block" of the newest match
 wait_log() {

@@ -3,6 +3,7 @@
 // Two rules: anything that tightens (stop, lower, remove) goes straight to the wallet; anything that
 // loosens (raise, approve, unfreeze) first says in plain words what it will allow and asks.
 // Every transaction is simulated against the chain first, so a doomed one never reaches the wallet.
+import { keccak256 } from "./keccak.js";
 const C = window.PM_CONFIG, L = window.PM_LIB;
 const $ = (id) => document.getElementById(id);
 const eth = window.ethereum;
@@ -20,7 +21,8 @@ const eq = (a, b) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
 const ether = (hex) => Number(BigInt(hex)) / 1e18;
 const name = C.agentName;
 
-let owner = null, me = null, busy = false, thawOK = false;
+let owner = null, me = null, busy = false, thawOK = false, request = null;
+const esc = (t) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 // ---- wallet ----
 const net = (c) => ({ chainId: "0x" + c.id.toString(16), chainName: c.name, rpcUrls: [c.rpc], blockExplorerUrls: [c.tx.replace(/\/tx\/$/, "")],
@@ -89,9 +91,30 @@ function signedIn() {
   if (mine) { $("desk-owner").textContent = short(owner); render(); }
 }
 
+// ---- a raise request from the agent ----
+// The agent can't send a transaction (it holds no gas), so it asks with a signed message carried in
+// the link: ?ask=<units>&at=<unix time>&why=<reason>&sig=<signature>. Check the signature against the
+// agent's address before showing it as the agent's: keccak here, ecrecover through a public eth_call.
+async function readRequest() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has("ask")) return null;
+  const sig = q.get("sig") || "", at = Number(q.get("at")), why = (q.get("why") || "").slice(0, 200);
+  let units = 0n; try { units = BigInt(q.get("ask")); } catch { /* not a number */ }
+  if (!/^0x[0-9a-fA-F]{130}$/.test(sig) || units <= 0n || !Number.isFinite(at)) return { ok: false, note: "The raise request in this link is malformed. Ignore it." };
+  const body = new TextEncoder().encode(`Pocket Money raise request\nagent ${C.agent.toLowerCase()}\namount ${units}\nat ${at}\nreason ${why}`);
+  const head = new TextEncoder().encode(`\x19Ethereum Signed Message:\n${body.length}`);
+  const all = new Uint8Array(head.length + body.length); all.set(head); all.set(body, head.length);
+  const out = await rpc(C.chains[0].rpc, "eth_call", [{ to: "0x0000000000000000000000000000000000000001", data: keccak256(all) + pad(sig.slice(130)) + sig.slice(2, 130) }, "latest"]).catch(() => "0x");
+  if (!eq("0x" + out.slice(26), C.agent)) return { ok: false, note: `The raise request in this link is not signed by ${name}'s key. Ignore it.` };
+  const age = Date.now() / 1000 - at;
+  if (age > 86400 || age < -600) return { ok: false, note: `The raise request in this link is more than a day old. Ignore it.` };
+  return { ok: true, units, why };
+}
+
 // ---- "Needs the owner": the same checks as script/watch.sh, for anyone to read ----
 async function needs() {
   const { guard: g, chains } = window.PM, out = [];
+  if (request?.ok) out.push(`${name} is asking for ${usd(request.units)} more today: “${esc(request.why)}” The request is signed by ${name}'s key. The owner can approve it at the desk, or ignore it.`);
   if (g.panicked) out.push("Everything is stopped: panic was pressed. The owner lifts it from the desk below.");
   if (g.quarantined) out.push(`${name} paid an address that wasn't approved and is frozen on every chain.`);
   C.chains.forEach((c, i) => { if (!g.panicked && !g.quarantined && (chains[i].frozen || chains[i].agentFrozen)) out.push(`Still frozen on ${c.name}.`); });
@@ -129,6 +152,8 @@ function render() {
   $("allow-now").textContent = usd(g.allowance);
   $("allow-ceiling").textContent = usd(g.ceiling) + " a day";
   if (!$("stop-chain").options.length) for (const id of ["stop-chain", "raise-chain"]) $(id).innerHTML = C.chains.map((c, i) => `<option value="${i}">${c.name}</option>`).join("");
+  $("raise-request").hidden = !request;
+  if (request) $("raise-request").textContent = request.ok ? `${name} asks for ${usd(request.units)} more today: “${request.why}” Signed by ${name}'s key.` : request.note;
   const stopped = g.panicked || window.PM.chains.every((c) => c.frozen);
   $("stop").disabled = stopped; $("stop").textContent = stopped ? "Already stopped" : "Stop everything";
 
@@ -185,6 +210,9 @@ $("payees").onclick = (e) => {
 document.addEventListener("pm:state", () => { needs().catch(console.error); render(); });
 (async () => {
   owner = "0x" + (await call(C.lasna, C.guard, SEL.owner)).slice(26);
+  request = await readRequest();
+  if (request?.ok) $("raise-amount").value = (Number(request.units) / 1e6).toFixed(2);
+  if (request && window.PM) { needs().catch(console.error); render(); }
   if (!eth) return;
   eth.on?.("accountsChanged", (a) => { me = a[0] || null; signedIn(); });
   [me] = await eth.request({ method: "eth_accounts" }).catch(() => []); // already connected earlier: no prompt

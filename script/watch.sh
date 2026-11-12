@@ -4,14 +4,14 @@
 # was booked. Read-only; no passwords.
 #   script/watch.sh            check every 60 seconds until stopped
 #   script/watch.sh --once     check once (for cron or launchd)
-# Alerts go to the terminal and to a macOS notification. To also get them on your phone, set
-#   ALERT_URL=https://ntfy.sh/<a-topic-only-you-know>
-# and each alert is POSTed there as plain text. Only the alert line is sent: no keys.
+# Alerts go to the terminal and to a macOS notification. To also get them on your phone, run
+# script/alerts-setup.sh once (or set ALERT_URL=https://ntfy.sh/<a-topic-only-you-know>); each alert
+# is then POSTed there as plain text. Only the alert line is sent: no keys.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 source script/lib.sh
 set -a; source deployments/testnet.env; source deployments/wallets.env; set +a
-STATE=deployments/.watch-state; EVERY=${EVERY:-60}
+STATE=deployments/.watch-state; EVERY=${EVERY:-60}; ALERT_URL=$(alert_url)
 ge() { [[ $(echo "$1 >= $2" | bc) == 1 ]]; }
 name() { case $1 in 84532) echo "Base Sepolia";; 1301) echo "Unichain Sepolia";; 11155111) echo "Ethereum Sepolia";; esac; }
 usd() { printf '$%s' "$(echo "scale=2; $1 / 1000000" | bc | sed 's/^\./0./')"; }

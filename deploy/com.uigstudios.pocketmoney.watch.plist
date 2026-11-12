@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Checks Pocket Money every two minutes and alerts on a change (script/watch.sh, read-only, no
+     passwords). Installed by script/go-live.sh, removed by script/go-live.sh --stop. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.uigstudios.pocketmoney.watch</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__REPO__/script/watch.sh</string>
+    <string>--once</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>120</integer>
+  <key>StandardOutPath</key>
+  <string>__REPO__/deployments/daily/watch.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__REPO__/deployments/daily/watch.err.log</string>
+</dict>
+</plist>

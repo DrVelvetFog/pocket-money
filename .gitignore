@@ -6,3 +6,4 @@ broadcast/
 .netlify/
 .mine
 .watch-state*
+deployments/andy-seller.log
