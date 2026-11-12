@@ -35,6 +35,14 @@ owner() {
   echo "$out" >&2; return 1
 }
 
+# Passwords for the unattended daily job (pm-agent, pm-seller; never pm-owner). On macOS they live in
+# the login Keychain. Elsewhere they live in files only you can read, which is weaker: anyone who can
+# read your home directory can read them. Testnet keys only. Stored by script/keychain-setup.sh.
+PASS_DIR=${PM_PASS_DIR:-$HOME/.config/pocket-money}
+is_mac() { [[ $(uname) == Darwin ]]; }
+keypass() { if is_mac; then security find-generic-password -s pocket-money -a "$1" -w 2>/dev/null; else cat "$PASS_DIR/$1.pass" 2>/dev/null; fi; }
+opens()   { local k; k=$(keypass "$1") && CAST_UNSAFE_PASSWORD="$k" cast wallet decrypt-keystore "$1" >/dev/null 2>&1; }
+
 # wait_log <rpc> <from-block> <address> <event sig> [seconds] -> "tx block" of the newest match
 wait_log() {
   local i out

@@ -3,7 +3,8 @@
 #   start the x402 seller and the CCTP relayer -> the agent buys the BTC report on today's chain
 #   (rotating Base / Unichain / Ethereum Sepolia) -> wait for Reactive's top-up -> verify the whole
 #   receipt chain -> write deployments/daily/<date>.json -> stop everything.
-# Keystore passwords come from the macOS login Keychain (script/keychain-setup.sh), never a file.
+# Keystore passwords come from script/keychain-setup.sh: the macOS login Keychain, or on Linux a
+# private file (see keypass in script/lib.sh).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source script/lib.sh
@@ -13,7 +14,7 @@ DAY=$(date +%Y-%m-%d); OUT=deployments/daily/$DAY.json; mkdir -p deployments/dai
 exec > >(tee -a "deployments/daily/$DAY.log") 2>&1
 PORT=${PORT:-4021}
 
-kc() { security find-generic-password -s pocket-money -a "$1" -w 2>/dev/null || { echo "no Keychain entry for $1 (run script/keychain-setup.sh)" >&2; exit 1; }; }
+kc() { keypass "$1" || { echo "no stored password for $1 (run script/keychain-setup.sh)" >&2; exit 1; }; }
 unlock() { local k; k=$(CAST_UNSAFE_PASSWORD="$(kc "$1")" cast wallet decrypt-keystore "$1" 2>/dev/null | grep -oE '0x[0-9a-fA-F]{64}' || true)
   [[ -n "$k" ]] || { echo "could not unlock $1" >&2; exit 1; }; printf '%s' "$k"; }
 SELLER_PK=$(unlock pm-seller); AGENT_PK=$(unlock pm-agent); export SELLER_PK AGENT_PK; export RELAYER_PK=$SELLER_PK

@@ -76,11 +76,6 @@ ok "old payee revoked"  "$(cast call $PM 'approvedPayee(bytes32)(bool)' $(id $OL
 if [[ $WHICH == seller ]]; then
   ok "guard reads the new inbox" "$(cast call $PM 'inboxOf(uint256)(address)' 84532 --rpc-url $LASNA)" $NEW_INBOX
   ok "new inbox's attester is the new key" "$(cast call $NEW_INBOX 'attester()(address)' --rpc-url $(rpc 84532))" $NEW
-  if k=$(security find-generic-password -s pocket-money -a pm-seller -w 2>/dev/null) &&
-     CAST_UNSAFE_PASSWORD="$k" cast wallet decrypt-keystore pm-seller >/dev/null 2>&1; then
-    echo "  ✓ the Keychain password opens the new pm-seller keystore (the daily job will work)"
-  else
-    echo "  ✗ the Keychain password does NOT open the new pm-seller keystore: run script/keychain-setup.sh"
-  fi
-  unset k
+  if opens pm-seller; then echo "  ✓ the stored password opens the new pm-seller keystore (the daily job will work)"
+  else echo "  ✗ the stored password does NOT open the new pm-seller keystore: run script/keychain-setup.sh"; fi
 fi

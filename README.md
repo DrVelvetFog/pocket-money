@@ -195,7 +195,7 @@ The repository ships the author's deployment as a worked example. `./quickstart`
 | Stop everything | `cast send <any vault> "panic()" --account pm-owner --rpc-url <that chain>` |
 | Recover after a freeze | `script/drill.sh` shows each case and its reset |
 | Replace a leaked seller key | `script/rotate-seller.sh` |
-| Run the agent's job every morning, unattended | `script/keychain-setup.sh`, then `script/go-live.sh` (macOS) |
+| Run the agent's job every morning, unattended | `script/keychain-setup.sh`, then `script/go-live.sh`. macOS keeps the two job passwords in your Keychain and schedules with launchd. Linux keeps them in `~/.config/pocket-money/` (readable only by you, which is weaker) and schedules with cron. With less than 3 lREACT in the guard: `MIN_LREACT=1 script/go-live.sh` |
 
 `$PM`, `$AGENT` and the vault addresses are in `deployments/testnet.env` and `deployments/wallets.env`.
 
