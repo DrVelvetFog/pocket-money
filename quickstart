@@ -52,8 +52,16 @@ if [[ -f deployments/wallets.env && ! -f $MINE ]]; then
     exit 0
   else
     read -r -p "Is that your own address? [y/N] " a
-    if [[ $a == y || $a == Y ]]; then echo $shipped > $MINE
-    else
+    if [[ $a == y || $a == Y ]]; then
+      # "Yes" has to be backed by the key: a slip of the finger here would otherwise point every
+      # later step at someone else's contracts.
+      if [[ -f $KS/pm-owner ]] && [[ $(cast wallet address --account pm-owner | tr A-F a-f) == $(tr A-F a-f <<<"$shipped") ]]; then
+        echo $shipped > $MINE
+      else
+        echo "  the pm-owner key for that address isn't on this machine, so this deployment isn't yours"; a=n
+      fi
+    fi
+    if [[ $a != y && $a != Y ]]; then
       mkdir -p deployments/archive; stamp=$(date +%Y%m%d-%H%M%S)
       for f in wallets.env testnet.env; do [[ -f deployments/$f ]] && mv deployments/$f deployments/archive/example-$stamp-$f; done
       echo "  set the example aside in deployments/archive/"
@@ -72,6 +80,7 @@ addr_of() { # addr_of <keystore name> <NAME in wallets.env>
     echo "  creating $1: choose a password (you'll be asked for it during setup)" >&2
     a=$(cast wallet new $KS $1 | tee /dev/stderr | grep -oE '0x[0-9a-fA-F]{40}' | tail -1)
   fi
+  [[ $a =~ ^0x[0-9a-fA-F]{40}$ ]] || { echo "  ✗ couldn't create or open $1; nothing was saved. Run ./quickstart again." >&2; return 1; }
   echo "$2=$a" >> deployments/wallets.env; echo $a
 }
 if plan; then
