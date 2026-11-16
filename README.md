@@ -273,7 +273,7 @@ All of Pocket Money's code was written during the buildathon. Prior work enters 
 
 Circle's USDC and CCTP are the on-chain dependencies.
 
-**Live dashboard:** [pocket-money-passbook.netlify.app](https://pocket-money-passbook.netlify.app)
+**Live dashboard:** [pocketmoney.tonyjagodka.com](https://pocketmoney.tonyjagodka.com)
 
 ## License
 
