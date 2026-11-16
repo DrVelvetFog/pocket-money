@@ -148,12 +148,13 @@ function thawSteps() {
   });
   return s;
 }
+// The chain menus come straight from the config, so they are full before the first chain read finishes.
+for (const id of ["stop-chain", "raise-chain"]) $(id).innerHTML = C.chains.map((c, i) => `<option value="${i}">${c.name}</option>`).join("");
 function render() {
   if (!window.PM || !eq(me, owner)) return;
   const { guard: g } = window.PM;
   $("allow-now").textContent = usd(g.allowance);
   $("allow-ceiling").textContent = usd(g.ceiling) + " a day";
-  if (!$("stop-chain").options.length) for (const id of ["stop-chain", "raise-chain"]) $(id).innerHTML = C.chains.map((c, i) => `<option value="${i}">${c.name}</option>`).join("");
   $("raise-request").hidden = !request;
   if (request) $("raise-request").textContent = request.ok ? `${name} asks for ${usd(request.units)} more today: “${request.why}” Signed by ${name}'s key.` : request.note;
   const stopped = g.panicked || window.PM.chains.every((c) => c.frozen);
