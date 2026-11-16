@@ -206,6 +206,7 @@ It has been run start to finish on a second machine from a fresh clone, with its
 | Let a real model run an errand | `script/andy.sh`. A local model (Ollama, `hermes3` by default) checks its budget and buys over x402. If the shop refuses it for being over budget, it asks you for a raise: a request signed by the agent's key, sent to your phone and shown at the owner's desk, where the passbook checks the signature before calling it the agent's. `ANDY_MODEL=claude` uses Claude instead |
 | Replace a leaked seller key | `script/rotate-seller.sh` |
 | Run the agent's job every morning, unattended | `script/keychain-setup.sh`, then `script/go-live.sh`. macOS keeps the two job passwords in your Keychain and schedules with launchd. Linux keeps them in `~/.config/pocket-money/` (readable only by you, which is weaker) and schedules with cron. With less than 3 lREACT in the guard: `MIN_LREACT=1 script/go-live.sh` |
+| Refill gas for a long run | `script/top-up.sh` turns the owner's Ethereum Sepolia ETH into lREACT for the guard and Base Sepolia gas for the owner and the shop |
 
 `$PM`, `$AGENT` and the vault addresses are in `deployments/testnet.env` and `deployments/wallets.env`.
 

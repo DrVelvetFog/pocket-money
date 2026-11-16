@@ -45,6 +45,24 @@ const GUARD = parseAbi(["function receiptHead() view returns (bytes32)", "functi
 
 const reactive = createPublicClient({ chain: lasna, transport: http() });
 const evm = new Map(NETS.map((n) => [n.id, createPublicClient({ chain: n.chain, transport: http(n.rpc) })]));
+// Public nodes drop old transaction records (the default Sepolia one answers "not found" for
+// payments a few days old), so a missing receipt is asked for again from other nodes. A node can't
+// fake one: the log index it gives has to reproduce the head the guard committed to.
+const OLDER: Record<number, string[]> = {
+  11155111: (process.env.SEPOLIA_HISTORY_RPC ?? "https://sepolia.rpc.thirdweb.com,https://api.zan.top/eth-sepolia").split(","),
+};
+async function receiptOf(id: number, hash: Hex) {
+  const net = netById(id);
+  const clients = [evm.get(id)!, ...(OLDER[id] ?? []).map((u) => createPublicClient({ chain: net.chain, transport: http(u) }))];
+  for (const c of clients) {
+    try {
+      return await c.getTransactionReceipt({ hash });
+    } catch {
+      /* this node doesn't have it: try the next */
+    }
+  }
+  throw new Error("no node has this receipt");
+}
 
 async function creationBlock(addr: Hex): Promise<bigint> {
   // Public nodes prune old state ("header not found"), so missing history counts as "not deployed
@@ -106,7 +124,7 @@ async function main() {
     if (net && payee.slice(2, 26) === "0".repeat(24)) {
       // looks like an EVM payment: prove it on the origin chain
       try {
-        const rc = await evm.get(net.id)!.getTransactionReceipt({ hash: ref });
+        const rc = await receiptOf(net.id, ref);
         const hit = (rc.logs as Log[]).find((l) => {
           if (l.address.toLowerCase() !== netById(net.id).usdc.toLowerCase()) return false;
           try {
