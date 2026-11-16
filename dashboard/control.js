@@ -63,7 +63,9 @@ async function act({ chain, to, calldata, doing, after = "" }) {
     else say(`${doing}: still not confirmed after two minutes (${where}). Check it before trying again.`, true);
     await window.PM.refresh();
   } catch (e) {
-    say(e.code === 4001 ? `${doing}: you declined it in the wallet. Nothing was sent.` : `${doing}: ${e.message || e}`, true);
+    // Anything else here came from the wallet: usually its own connection to that chain is down.
+    say(e.code === 4001 ? `${doing}: you declined it in the wallet. Nothing was sent.`
+      : `${doing}: your wallet couldn't send it on ${chain.name} (${esc(String(e.message || e)).slice(0, 160)}). Nothing changed. Wait a minute and try again, or use another chain if this card offers one.`, true);
   } finally { busy = false; document.body.classList.remove("desk-busy"); }
 }
 // The loosening rule: say what it will allow, and wait for a yes.
