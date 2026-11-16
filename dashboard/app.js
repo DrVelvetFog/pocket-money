@@ -33,11 +33,26 @@ const short = (h) => h.slice(0, 6) + "…" + h.slice(-4);
 const chainName = (id) => C.chains.find((c) => BigInt(c.id) === BigInt(id))?.name ?? `chain ${id}`;
 
 let rpcId = 0;
+// Public nodes go down or refuse some calls for a while, so each one has a stand-in. A node that
+// is unreachable is not the chain saying no: only a JSON-RPC error counts as the chain's answer.
+const BACKUP = {
+  "https://sepolia.base.org": "https://base-sepolia-rpc.publicnode.com",
+  "https://sepolia.unichain.org": "https://unichain-sepolia-rpc.publicnode.com",
+  "https://ethereum-sepolia-rpc.publicnode.com": "https://sepolia.rpc.thirdweb.com",
+};
 async function rpc(url, method, params) {
-  const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }) });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message);
-  return j.result;
+  let down;
+  for (const u of [url, BACKUP[url]].filter(Boolean)) {
+    let j;
+    try {
+      const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      j = await r.json();
+    } catch (e) { down = e; continue; } // this node didn't answer: try the next
+    if (j.error) throw new Error(j.error.message);
+    return j.result;
+  }
+  throw Object.assign(new Error(`couldn't reach a node (${down.message})`), { unreachable: true });
 }
 const call = (url, to, sel, ...args) => rpc(url, "eth_call", [{ to, data: sel + args.map(pad).join("") }, "latest"]);
 

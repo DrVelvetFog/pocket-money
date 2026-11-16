@@ -50,7 +50,7 @@ async function act({ chain, to, calldata, doing, after = "" }) {
   try {
     say(`${doing}: checking it against ${chain.name}…`);
     try { await rpc(chain.rpc, "eth_call", [{ from: owner, to, data: calldata }, "latest"]); }
-    catch (e) { say(`${doing}: ${chain.name} would reject this (${e.message}). Nothing was sent.`, true); return; }
+    catch (e) { say(e.unreachable ? `${doing}: ${chain.name} can't be reached right now, so this couldn't be checked. Nothing was sent. Try again in a minute.` : `${doing}: ${chain.name} would reject this (${e.message}). Nothing was sent.`, true); return; }
     say(`${doing}: switching your wallet to ${chain.name}…`);
     await switchTo(chain);
     say(`${doing}: approve it in your wallet. It goes to ${chain.name}.`);
