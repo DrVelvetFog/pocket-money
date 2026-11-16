@@ -12,7 +12,7 @@ import { ExactEvmScheme as ExactFacilitatorScheme } from "@x402/evm/exact/facili
 import { ExactEvmScheme as ExactServerScheme } from "@x402/evm/exact/server";
 import { createPublicClient, createWalletClient, hexToString, http, parseAbi, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { NETS, USDC_DOMAIN, pk } from "./chains.ts";
+import { NETS, usdcDomain, pk } from "./chains.ts";
 
 const PORT = Number(process.env.PORT ?? 4021);
 const PRICE = process.env.PRICE_UNITS ?? "100000"; // $0.10 in USDC's 6 decimals
@@ -105,7 +105,7 @@ app.use(
           scheme: "exact",
           network: `eip155:${n.id}`,
           payTo: account.address,
-          price: { amount: PRICE, asset: n.usdc, extra: USDC_DOMAIN },
+          price: { amount: PRICE, asset: n.usdc, extra: usdcDomain(n) },
           maxTimeoutSeconds: 300,
         })),
         description: "BTC spot price and the gap to a mining breakeven band",

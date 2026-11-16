@@ -2,13 +2,29 @@
 # Deploy Pocket Money: the guard on Reactive Lasna, a vault on Base Sepolia, Unichain Sepolia and
 # Ethereum Sepolia (each wired to Circle CCTP and to its sibling vaults), the Sui spend inbox on
 # Base Sepolia, one household agent, and the approved payees (owner + x402 seller).
-# Testnet only. Asks for the pm-owner keystore password ONCE, keeps it in a private temp file for
+# Testnet unless NETWORK=mainnet (see below). Asks for the pm-owner keystore password ONCE, keeps it in a private temp file for
 # this run (mode 600), and deletes it on exit.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p deployments
 exec > >(tee -a "deployments/deploy-$(date +%Y%m%d-%H%M%S).log") 2>&1
 
+# NETWORK=mainnet deploys the same contracts with real money: the guard on Reactive mainnet and a
+# vault on Base and Unichain. Addresses: dev.reactive.network/origins-and-destinations (callback
+# proxies), developers.circle.com (USDC, CCTP v2). Everything else in the repo still reads the
+# testnet deployment; this only deploys.
+NETWORK=${NETWORK:-testnet}
+if [[ $NETWORK == mainnet ]]; then
+  LASNA=${REACTIVE_RPC:-https://mainnet-rpc.rnk.dev/}   # Reactive mainnet (the name is kept for the steps below)
+  rpc()   { case $1 in 8453) echo ${BASE_RPC:-https://mainnet.base.org};; 130) echo ${UNI_RPC:-https://mainnet.unichain.org};; esac; }
+  proxy() { case $1 in 8453) echo 0xCc780DdE33f56f55dE778D42c930959374a4a068;; 130) echo 0x754120EC7a6eF81E4c5c835AA603C63Da64693E6;; esac; }
+  domain(){ case $1 in 8453) echo 6;; 130) echo 10;; esac; }
+  vusdc() { case $1 in 8453) echo ${VAULT_USDC_BASE:-3200000};; 130) echo ${VAULT_USDC_UNI:-5000000};; esac; }
+  usdc()  { case $1 in 8453) echo 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;; 130) echo 0x078D782b760474a361dDA0AF3839290b0EF57AD6;; esac; }
+  TOKEN_MESSENGER=0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d  # Circle CCTP v2, same on every mainnet
+  CHAINS=(${CHAINS:-8453 130}); BASE_ID=8453
+  for c in "${CHAINS[@]}"; do [[ -n "$(rpc $c)" ]] || { echo "chain $c has no mainnet entry here (use 8453 and/or 130)" >&2; exit 1; }; done
+else
 LASNA=https://lasna-rpc.rnk.dev/
 rpc()   { case $1 in 84532) echo ${BASE_RPC:-https://sepolia.base.org};;
                     1301) echo ${UNI_RPC:-https://sepolia.unichain.org};;
@@ -23,7 +39,8 @@ TOKEN_MESSENGER=0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA  # Circle CCTP v2, sa
 usdc()  { case $1 in 84532) echo 0x036CbD53842c5426634e7929541eC2318f3dCF7e;;
                     1301) echo 0x31d0220469e10c4E71834a79b1f276d740d3768F;;
                     11155111) echo 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;; esac; }
-CHAINS=(${CHAINS:-84532 1301 11155111})
+CHAINS=(${CHAINS:-84532 1301 11155111}); BASE_ID=84532
+fi
 
 CEILING=${CEILING:-5000000}        # household: $5/day
 ALLOWANCE=${ALLOWANCE:-3000000}    # agent: $3/day
@@ -32,13 +49,18 @@ LOW_WATER=${LOW_WATER:-3000000}    # rebalance a vault below $3 ...
 TARGET=${TARGET:-4000000}          # ... back up to $4
 MAX_FEE=${MAX_FEE:-1000}           # CCTP fast-transfer fee ceiling ($0.001)
 REBALANCE_CAP=${REBALANCE_CAP:-5000000}
-PM_FUND=${PM_FUND:-1.7ether}       # lREACT for reactive fees
+PM_FUND=${PM_FUND:-1.7ether}       # lREACT (REACT on mainnet) for reactive fees
 VAULT_ETH=${VAULT_ETH:-0.0002ether}
 AGENT_ETH=${AGENT_ETH:-0.00002ether} # until the x402 seller: plain transfers need gas
 
 source deployments/wallets.env
 PAYEE=${PAYEE:-$OWNER}
-OUT=deployments/testnet.env
+OUT=deployments/$NETWORK.env
+if [[ $NETWORK == mainnet ]]; then
+  echo "MAINNET: this spends real REACT, ETH and USDC from $OWNER on chains ${CHAINS[*]}."
+  echo "The contracts have not had an outside audit. Keep the amounts small."
+  read -r -p "Type 'real money' to go on: " yes; [[ $yes == "real money" ]] || { echo "stopped; nothing sent."; exit 1; }
+fi
 
 pwdir=$(mktemp -d); chmod 700 "$pwdir"; trap 'rm -rf "$pwdir"' EXIT
 read -rs -p "pm-owner keystore password: " pw; echo
@@ -87,7 +109,7 @@ if [[ -z "${RESUME:-}" && -f $OUT ]]; then
 fi
 
 if [[ -z "${RESUME:-}" ]]; then
-  step "1 deploy PocketMoney on Lasna"
+  step "1 deploy PocketMoney on Reactive ($NETWORK)"
   PM=$(forge create src/PocketMoney.sol:PocketMoney --rpc-url $LASNA "${SIGN[@]}" --broadcast \
     --value $PM_FUND --json --constructor-args $CEILING | jq -r .deployedTo)
   echo "   PocketMoney $PM"
@@ -138,15 +160,15 @@ for c in "${CHAINS[@]}"; do
 done
 send $PM "setRebalancePolicy(uint256,uint256,uint256)" $LOW_WATER $TARGET $MAX_FEE --rpc-url $LASNA
 
-step "3c Sui spend inbox on Base Sepolia (attester = the seller's service key)"
+step "3c Sui spend inbox on Base (attester = the seller's service key)"
 if [[ -z "${INBOX:-}" ]]; then
-  INBOX=$(forge create src/SpendInbox.sol:SpendInbox --rpc-url $(rpc 84532) "${SIGN[@]}" --broadcast \
+  INBOX=$(forge create src/SpendInbox.sol:SpendInbox --rpc-url $(rpc $BASE_ID) "${SIGN[@]}" --broadcast \
     --json --constructor-args ${ATTESTER:-$SELLER} | jq -r .deployedTo)
   echo "INBOX=$INBOX" >> $OUT
 fi
 echo "   SpendInbox $INBOX"
-[[ $(cast call $PM "inboxOf(uint256)(address)" 84532 --rpc-url $LASNA | tr A-F a-f) == $(tr A-F a-f <<<"$INBOX") ]] ||
-  send $PM "addInbox(uint256,address)" 84532 $INBOX --rpc-url $LASNA
+[[ $(cast call $PM "inboxOf(uint256)(address)" $BASE_ID --rpc-url $LASNA | tr A-F a-f) == $(tr A-F a-f <<<"$INBOX") ]] ||
+  send $PM "addInbox(uint256,address)" $BASE_ID $INBOX --rpc-url $LASNA
 
 step "4 household: payees, then the agent (which pushes its budget mirror to every vault)"
 send $PM "setPayee(address,bool)" $PAYEE true --rpc-url $LASNA
