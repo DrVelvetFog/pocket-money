@@ -54,7 +54,20 @@ async function act({ chain, to, calldata, doing, after = "" }) {
     say(`${doing}: switching your wallet to ${chain.name}…`);
     await switchTo(chain);
     say(`${doing}: approve it in your wallet. It goes to ${chain.name}.`);
-    const hash = await eth.request({ method: "eth_sendTransaction", params: [{ from: me, to, data: calldata }] });
+    const send = () => eth.request({ method: "eth_sendTransaction", params: [{ from: me, to, data: calldata }] });
+    let hash;
+    try { hash = await send(); }
+    catch (e) {
+      // MetaMask lets a site switch to a chain it added after connecting, and read from it, but
+      // refuses to sign there (4100) until the account permission is granted again. Ask once.
+      if (e.code !== 4100) throw e;
+      say(`${doing}: your wallet wants you to confirm this account for ${chain.name} first. Approve that, then the transaction.`);
+      await eth.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+      const [now] = await eth.request({ method: "eth_accounts" });
+      if (!eq(now, owner)) { me = now; signedIn(); say(`${doing}: the wallet is now on an account that isn't the owner. Nothing was sent.`, true); return; }
+      say(`${doing}: approve it in your wallet. It goes to ${chain.name}.`);
+      hash = await send();
+    }
     const where = `<a class="mono" href="${chain.tx}${hash}" target="_blank" rel="noopener">${short(hash)}</a>`;
     say(`${doing}: sent (${where}). Waiting for ${chain.name} to confirm…`);
     const ok = await confirmed(chain, hash);
