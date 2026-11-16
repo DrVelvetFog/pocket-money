@@ -18,7 +18,7 @@ usd() { printf '$%s' "$(echo "scale=2; $1 / 1000000" | bc | sed 's/^\./0./')"; }
 alert() {
   echo "$(date '+%Y-%m-%d %H:%M')  $1"
   command -v osascript >/dev/null && osascript -e "display notification \"${1//\"/}\" with title \"Pocket Money\"" 2>/dev/null
-  [[ -n "${ALERT_URL:-}" ]] && curl -fsS -m 10 -d "Pocket Money: $1" "$ALERT_URL" >/dev/null 2>&1
+  [[ -n "${ALERT_URL:-}" ]] && curl -fsS -m 10 -H "Title: Pocket Money" -H "Click: $(passbook_url)" -d "$1" "$ALERT_URL" >/dev/null 2>&1
   return 0
 }
 # flag <key> <1|0> <message when it turns on> [message when it clears]: alert on change only

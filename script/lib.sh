@@ -48,6 +48,10 @@ unlock() { if opens "$1"; then CAST_UNSAFE_PASSWORD="$(keypass "$1")" cast walle
 # Where alerts go (script/alerts-setup.sh): a push address such as an ntfy topic. Empty means terminal only.
 alert_url() { echo "${ALERT_URL:-$(cat "$PASS_DIR/alert-url" 2>/dev/null || true)}"; }
 
+# Where the passbook lives, so alerts can link to it: DASHBOARD_URL, or the address saved by
+# PASSBOOK_URL=https://... script/alerts-setup.sh, or the local preview.
+passbook_url() { echo "${DASHBOARD_URL:-$(cat "$PASS_DIR/passbook-url" 2>/dev/null || echo http://localhost:4173)}"; }
+
 # wait_log <rpc> <from-block> <address> <event sig> [seconds] -> "tx block" of the newest match
 wait_log() {
   local i out

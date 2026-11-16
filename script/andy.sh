@@ -6,6 +6,8 @@
 # The model runs on this machine through Ollama (https://ollama.com), hermes3 by default:
 #   ANDY_MODEL=<an Ollama model with tool support> script/andy.sh
 #   ANDY_MODEL=claude script/andy.sh    Claude instead; needs ANTHROPIC_API_KEY in your environment
+# Rehearse with no keys and no money (the shop and chains are faked, the model is real):
+#   cd agent && ANDY_DRY=ok npx tsx src/andy.ts        or ANDY_DRY=refuse for the raise-request path
 # The model never sees a key: it can only call the four tools in agent/src/andy.ts. A raise request
 # is signed by the agent's key and shown at the owner's desk on the passbook, and on your phone if
 # you ran script/alerts-setup.sh. Uses the stored pm-agent and pm-seller passwords, or asks.
@@ -24,5 +26,5 @@ SELLER_PK=$(unlock pm-seller); AGENT_PK=$(unlock pm-agent); export SELLER_PK AGE
 trap 'pkill -f "tsx src/seller.ts" 2>/dev/null; true' EXIT
 for _ in $(seq 1 60); do curl -sf localhost:$PORT/health >/dev/null && break; sleep 1; done
 cd agent
-ANDY_MODEL=$MODEL ALERT_URL=$(alert_url) AGENT_NAME=${AGENT_NAME:-Andy} DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:4173} \
+ANDY_MODEL=$MODEL ALERT_URL=$(alert_url) AGENT_NAME=${AGENT_NAME:-Andy} DASHBOARD_URL=$(passbook_url) \
   SELLER_URL=http://localhost:$PORT npx tsx src/andy.ts "$TASK"

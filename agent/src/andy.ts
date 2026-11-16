@@ -10,15 +10,20 @@
  * The brain is a local model through Ollama by default (no account, nothing leaves the machine):
  *   ANDY_MODEL=hermes3            any Ollama model that supports tools
  *   ANDY_MODEL=claude             Claude through the Anthropic API (needs ANTHROPIC_API_KEY)
+ * Rehearsal, with no keys and no money (the shop and the chains are faked, the model is real):
+ *   ANDY_DRY=ok                   the purchase goes through
+ *   ANDY_DRY=refuse               the shop refuses, the raise is "approved", the purchase goes through
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { betaTool } from "@anthropic-ai/sdk/helpers/beta/json-schema";
 import { createPublicClient, http, parseAbi, hexToString } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { NETS, pk } from "./chains.ts";
 import { buyReport } from "./buy.ts";
 
-const account = privateKeyToAccount(pk("AGENT_PK"));
+const DRY = process.env.ANDY_DRY;
+let dryLeft = DRY === "refuse" ? 0n : 2_900_000n;
+const account = privateKeyToAccount(DRY ? generatePrivateKey() : pk("AGENT_PK"));
 const usd = (units: bigint) => "$" + (Number(units) / 1e6).toFixed(2);
 const VAULT_ABI = parseAbi(["function canSpend(address,uint256) view returns (bool,uint256,bytes32)"]);
 const USDC_ABI = parseAbi(["function balanceOf(address) view returns (uint256)"]);
@@ -30,6 +35,7 @@ if (!chains.length) throw new Error("no VAULT_<chainId> in the environment (run 
 const byName = (name: string) => chains.find((c) => c.name.toLowerCase().startsWith(String(name).toLowerCase().split(" ")[0]));
 
 async function budget() {
+  if (DRY) return chains.map((c) => ({ chain: c.name, left: dryLeft, ok: true, why: "", held: 1_000_000n }));
   return Promise.all(chains.map(async (c) => {
     const [[ok, left, why], held] = await Promise.all([
       c.rpcClient.readContract({ address: c.vault, abi: VAULT_ABI, functionName: "canSpend", args: [account.address, 1n] }),
@@ -44,13 +50,20 @@ type Tool = {
   schema: { type: "object"; properties: Record<string, { type: "string" | "number"; description: string }>; required?: string[]; additionalProperties: false };
   run: (args: Record<string, unknown>) => Promise<string>;
 };
-let asked = false;
+let asked = false, checked = false;
 const TOOLS: Tool[] = [
   {
     name: "check_budget",
     description: "Read what you may still spend today. The allowance is shared across every chain; the amount in your wallet on each chain is separate and small.",
     schema: { type: "object", properties: {}, additionalProperties: false },
-    run: async () => (await budget()).map((b) => `${b.chain}: ${usd(b.left)} left today${b.ok ? "" : ` (blocked: ${b.why})`}, ${usd(b.held)} in the wallet`).join("\n"),
+    run: async () => {
+      checked = true;
+      const b = await budget(), most = b.reduce((m, x) => (x.left > m ? x.left : m), 0n);
+      // Small models stop at a low number unless the next step is spelled out.
+      return b.map((x) => `${x.chain}: ${usd(x.left)} left today${x.ok ? "" : ` (blocked: ${x.why})`}, ${usd(x.held)} in the wallet`).join("\n") +
+        (most >= 100_000n ? "\nThat covers the $0.10 report. Buy it now."
+          : "\nThat is less than the $0.10 report costs. Call buy_btc_report anyway: the shop checks your allowance itself and refuses without taking money if you are over. If it refuses, you may ask your owner for a raise.");
+    },
   },
   {
     name: "buy_btc_report",
@@ -59,12 +72,17 @@ const TOOLS: Tool[] = [
     run: async (a) => {
       const c = byName(String(a.chain ?? ""));
       if (!c) return `Unknown chain. Use one of: ${chains.map((x) => x.name).join(", ")}.`;
+      if (!checked) return "You haven't read your budget yet. Call check_budget first, then buy.";
       let r;
-      try { r = await buyReport(c.id); }
+      try {
+        r = !DRY ? await buyReport(c.id)
+          : dryLeft >= 100_000n ? { ok: true as const, chain: c.name, agent: account.address, settlement: null, report: { asOf: new Date().toISOString(), btcUsd: 64106.29, breakevenBand: [95000, 102000], gapToLow: -30894, gapToHigh: -37894, verdict: "below band" } }
+          : { ok: false as const, chain: c.name, status: 402, said: "over_budget" };
+      }
       catch { return "The shop could not be reached. That is a network problem, not a refusal and not about your budget. Stop and tell your owner."; }
-      if (r.ok) return `Paid $0.10 on ${r.chain}. The report: ${JSON.stringify(r.report)}. The errand is done; write your short report for the owner.`;
+      if (r.ok) return `Paid $0.10 on ${r.chain}. The report: ${JSON.stringify(r.report)}. The errand is done. Now answer your owner in two short sentences: what you paid and on which chain, and the one thing in the report that matters to them. Don't repeat every number.`;
       // Say what the refusal means and what is allowed next; small models need the next step spelled out.
-      if (/over_budget/.test(r.said)) return `The shop refused and took no money: you are over today's allowance. ${asked ? "You already asked for a raise; call wait_for_owner." : "You may now call ask_owner_for_raise once, for the $0.10 this costs, with a one-sentence reason."}`;
+      if (/over_budget/.test(r.said)) return `The shop refused and took no money: you are over today's allowance. ${asked ? "You already asked for a raise; call wait_for_owner." : "Call ask_owner_for_raise now, once, for the $0.10 this costs. Write the one-sentence reason yourself (what you were buying and that the shop refused you); don't ask your owner what to say."}`;
       if (/frozen|quarantin/i.test(r.said)) return "The shop refused and took no money: your owner's guard has frozen you. Only the owner can lift that. Stop and say so.";
       return `The shop refused and took no money (${r.status}): ${r.said.slice(0, 200)}. Stop and tell your owner.`;
     },
@@ -84,7 +102,12 @@ const TOOLS: Tool[] = [
       const link = `${process.env.DASHBOARD_URL ?? "http://localhost:4173"}/?ask=${units}&at=${at}&why=${encodeURIComponent(reason)}&sig=${sig}`;
       const line = `${process.env.AGENT_NAME ?? "Andy"} asks for ${usd(BigInt(units))} more today: ${reason}`;
       console.log(`\n   ${line}\n   Approve or ignore it at the owner's desk:\n   ${link}\n`);
-      if (process.env.ALERT_URL) await fetch(process.env.ALERT_URL, { method: "POST", body: line, headers: { Title: "Pocket Money", Click: link, Tags: "raising_hand" } }).catch(() => {});
+      if (process.env.ALERT_URL && !DRY) {
+        // Tapping the alert opens the request at the owner's desk; the button does the same from inside the app.
+        const sent = await fetch(process.env.ALERT_URL, { method: "POST", body: line, headers: { Title: "Pocket Money", Click: link, Actions: `view, Open the owner's desk, ${link}`, Tags: "raising_hand" } })
+          .then((r) => (r.ok ? "" : `the alert service answered ${r.status}`), (e) => e.message);
+        console.log(sent ? `   (couldn't send the phone alert: ${sent}. Use the link above.)\n` : "   (sent to your phone)\n");
+      }
       return "Your request was sent to the owner. Now call wait_for_owner with 5 minutes to see whether it is approved.";
     },
   },
@@ -93,6 +116,7 @@ const TOOLS: Tool[] = [
     description: "Wait up to a few minutes for the owner to answer a raise request. Returns as soon as your budget goes up, or says there was no answer.",
     schema: { type: "object", properties: { minutes: { type: "number", description: "How long to wait, 1 to 10" } }, required: ["minutes"], additionalProperties: false },
     run: async (a) => {
+      if (DRY) { dryLeft += 100_000n; return `Approved. You now have ${usd(dryLeft)} left today. Buy the report now.`; }
       const until = Date.now() + Math.min(10, Math.max(1, Number(a.minutes) || 3)) * 60_000;
       const before = (await budget()).reduce((m, b) => (b.left > m ? b.left : m), 0n);
       while (Date.now() < until) {
@@ -115,7 +139,7 @@ How the money works: your owner set one daily allowance that covers every chain 
 
 When a shop refuses you for being over budget, you may ask your owner for a raise for today: once, for the smallest amount that covers the errand, with one honest sentence of reason. Then wait for the answer. If it is approved, finish the errand. If there is no answer, stop without spending and say so. Never try to get around a refusal another way.
 
-Check your budget before you spend. When you are done, report in two or three plain sentences: what you bought and on which chain, what it cost, what the report says, and anything your owner should know.`;
+Always read your budget before you spend. When you are done, answer your owner in two or three short, plain sentences: what you paid and on which chain, the one thing in the report that matters, and anything else they need to know. Don't repeat every number, and don't announce that you are finished.`;
 
 const say = (who: string, text: string) => console.log(`${who.padEnd(6)} ${text.replace(/\n/g, "\n       ")}`);
 async function call(name: string, args: Record<string, unknown>) {
@@ -126,9 +150,12 @@ async function call(name: string, args: Record<string, unknown>) {
   return out;
 }
 
-const task = process.argv[2] ?? "Buy today's BTC report and tell me what it says.";
+const errand = process.argv[2] ?? "Buy today's BTC report and tell me what it says.";
 const model = process.env.ANDY_MODEL ?? "hermes3";
-say("owner", task);
+if (DRY) console.log("(rehearsal: the shop and the chains are faked; no key is used and no money moves)");
+say("owner", errand);
+// Every errand starts with the budget, read by the agent itself, so the model never spends blind.
+const task = `${errand}\n\nYour budget right now:\n${await call("check_budget", {})}`;
 
 if (model.startsWith("claude")) {
   const client = new Anthropic();
@@ -151,12 +178,18 @@ if (model.startsWith("claude")) {
   const host = process.env.OLLAMA_HOST ?? "http://localhost:11434";
   const messages: Record<string, unknown>[] = [{ role: "system", content: SYSTEM }, { role: "user", content: task }];
   const tools = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.schema } }));
+  let nudged = false;
   for (let turn = 0; turn < 12; turn++) {
     const res = await fetch(`${host}/api/chat`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model, messages, tools, stream: false, options: { temperature: 0 } }) });
     if (!res.ok) throw new Error(`Ollama said ${res.status}: ${await res.text()} (is it running, and is "${model}" pulled?)`);
     const msg = (await res.json()).message as { content?: string; tool_calls?: { function: { name: string; arguments: Record<string, unknown> | string } }[] };
     messages.push(msg);
-    if (!msg.tool_calls?.length) { say("andy", (msg.content ?? "").trim() || "(no answer)"); break; }
+    if (!msg.tool_calls?.length) {
+      const text = (msg.content ?? "").trim();
+      // A small model sometimes ends a long errand with an empty turn: ask once for the report.
+      if (!text && !nudged) { nudged = true; messages.push({ role: "user", content: "Give your owner the report now, in two short sentences." }); continue; }
+      say("andy", text || "(no answer)"); break;
+    }
     for (const tc of msg.tool_calls) {
       const args = typeof tc.function.arguments === "string" ? JSON.parse(tc.function.arguments || "{}") : tc.function.arguments ?? {};
       messages.push({ role: "tool", tool_name: tc.function.name, content: await call(tc.function.name, args) });
