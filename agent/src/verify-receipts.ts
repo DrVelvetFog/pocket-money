@@ -65,6 +65,8 @@ async function receiptOf(id: number, hash: Hex) {
 }
 
 async function creationBlock(addr: Hex): Promise<bigint> {
+  // A long run outlives the search window below, so a deployment can record where its guard starts.
+  if (process.env.PM_FROM_BLOCK) return BigInt(process.env.PM_FROM_BLOCK);
   // Public nodes prune old state ("header not found"), so missing history counts as "not deployed
   // yet" and the search only goes back as far as SEARCH_BACK blocks.
   let hi = await reactive.getBlockNumber();
